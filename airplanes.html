@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Airplanes</title>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.17.0/dist/phaser.js"></script>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<script type="text/javascript">
+  var config = {
+      type: Phaser.AUTO,
+      backgroundColor: 0x0066ff,
+      physics: {
+          default: 'arcade',
+          arcade: {
+            fps: 60,
+            gravity: { y: 0 }
+          }
+      },
+      scale: {
+        mode: Phaser.Scale.NONE,
+        _parent: 'phaser-example',
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        width: 1200,
+        height: 600
+    },
+      scene: {
+          preload: preload,
+          create: create,
+          update: update
+      }
+  };
+
+  var game = new Phaser.Game(config);
+
+  function preload ()
+  {
+      this.load.image('sky', 'assets/bg.png');
+      this.load.spritesheet('player', 'assets/player.png', {frameWidth: 58, frameHeight: 70});
+      this.load.spritesheet('cornduster', 'assets/cornduster.png', {frameWidth: 52, frameHeight: 60});
+      this.load.spritesheet('interceptor', 'assets/interceptor.png', {frameWidth: 38, frameHeight: 70});
+      this.load.spritesheet('destroyer', 'assets/destroyer.png', {frameWidth: 47, frameHeight: 80});
+      this.load.image('bomber1', 'assets/bomber1.png');
+      this.load.image('bomber2', 'assets/bomber2.png');
+  }
+
+  var cursors;
+  var player;
+  var corndusters;
+  var interceptors;
+  var destroyers;
+  var bombers1;
+  var bombers2;
+  var bullets
+
+  function create(){
+    //  Set the camera bounds to be the size of the image
+    this.cameras.main.setBounds(0, 0, 1200, 600);
+    this.physics.world.setBounds(0, 0, 1200, 600);
+
+    //add background
+    this.tileSprite = this.add.tileSprite(0,0,1200,600,'sky').setOrigin(0);
+
+    //CREATE A PLAYER
+    //add plyaer's airplane
+    player = this.physics.add.sprite(400,400,'player');
+    player.setCollideWorldBounds(true);
+
+    //create animation for the player's airplane
+    this.anims.create({
+      key: 'player',
+      frames: this.anims.generateFrameNumbers('player', { start: 0, end: 2 }),
+      frameRate: 30,
+      repeat: -1
+    })
+    player.anims.play('player', true);
+
+    player.hp = 200;
+
+    //CREATE ENEMIES:
+    //1. Corn Duster
+    //2. Interceptor
+    //3. Destroyer
+    //4. Bomber 1
+    //5. Bomber 2
+
+    //Create Corn Duster
+    corndusters = this.physics.add.group();
+    this.anims.create({
+      key: 'cornduster',
+      frames: this.anims.generateFrameNumbers('cornduster', { start: 0, end: 2 }),
+      frameRate: 30,
+      repeat: -1
+    })
+    this.physics.add.overlap(player, corndusters, enemyCollide, null, this);
+    this.time.addEvent({ delay: 7000, callback: sendCornduster, callbackScope: this, loop: true });
+
+    //Create Interceptor
+    interceptors = this.physics.add.group();
+    this.anims.create({
+      key: 'interceptor',
+      frames: this.anims.generateFrameNumbers('interceptor', { start: 0, end: 2 }),
+      frameRate: 30,
+      repeat: -1
+    })
+    this.physics.add.overlap(player, interceptors, enemyCollide, null, this);
+    this.time.addEvent({ delay: 2000, callback: sendInterceptor, callbackScope: this, loop: true });
+
+    //Create Destroyer
+    destroyers = this.physics.add.group();
+    this.anims.create({
+      key: 'destroyer',
+      frames: this.anims.generateFrameNumbers('destroyer', { start: 0, end: 2 }),
+      frameRate: 30,
+      repeat: -1
+    })
+    this.physics.add.overlap(player, destroyers, enemyCollide, null, this);
+    this.time.addEvent({ delay: 5000, callback: sendDestroyer, callbackScope: this, loop: true });
+
+    //Create Bomber 1
+    bombers1 = this.physics.add.group();
+    this.physics.add.overlap(player, bombers1, enemyCollide, null, this);
+    //this.time.addEvent({ delay: 10000, callback: sendBombers1, callbackScope: this, loop: false });
+    //this.time.addEvent({ delay: 50000, callback: sendBombers1, callbackScope: this, loop: true });
+
+    //Create Bomber 2
+    bombers2 = this.physics.add.group();
+    this.physics.add.overlap(player, bombers2, enemyCollide, null, this);
+    this.time.addEvent({ delay: 10000, callback: sendBombers2, callbackScope: this, loop: false });
+    this.time.addEvent({ delay: 70000, callback: sendBombers2, callbackScope: this, loop: true });
+
+    //add cursor keys
+    cursors = this.input.keyboard.createCursorKeys();
+
+  }
+
+  function update(){
+
+   //player moves
+    if (cursors.left.isDown)
+   {
+       player.setVelocityX(-200);
+   }
+   else if (cursors.right.isDown)
+   {
+       player.setVelocityX(200);
+   }
+   else
+   {
+       player.setVelocityX(0);
+   }
+
+   if (cursors.up.isDown)
+   {
+       player.setVelocityY(-300);
+   }
+   else if(cursors.down.isDown){
+      player.setVelocityY(300)
+   }
+   else{
+      player.setVelocityY(0);
+   }
+
+   //create an array of enemies that are outside the world and must be removed
+   var toRemove = new Array();
+
+   //check if enemy of each type has negative x (enemy left the battlefield)
+   corndusters.children.iterate(function(child){
+     if(child.x < -20){
+       toRemove.push(child);
+     }
+   });
+
+   interceptors.children.iterate(function(child){
+     if(child.x < -20){
+       toRemove.push(child);
+     }
+   });
+
+   destroyers.children.iterate(function(child){
+     if(child.x < -20){
+       toRemove.push(child);
+     }
+   });
+
+   bombers1.children.iterate(function(child){
+     if(child.y < -20){
+       toRemove.push(child);
+     }
+   });
+
+   bombers2.children.iterate(function(child){
+     if(child.y < -20){
+       toRemove.push(child);
+     }
+   });
+
+   while(toRemove.length>0){
+     var e = toRemove.pop();
+     removeEnemy(e);
+   }
+
+   //background moves
+   this.tileSprite.tilePositionX += 0.75;
+  }
+
+  function enemyCollide(player, enemy){
+    player.hp -= enemy.damage;
+    removeEnemy(enemy);
+  }
+
+  function removeEnemy(enemy){
+    enemy.disableBody(true,true);
+    //remove enemy from the group
+    if(enemy.name == 'cornduster'){
+      corndusters.remove(enemy);
+    }
+    else if(enemy.name == 'interceptor'){
+      interceptors.remove(enemy)
+    }
+    else if(enemy.name == 'destroyer'){
+      destroyers.remove(enemy);
+    }
+    else if(enemy.name == 'bomber1'){
+      bombers1.remove(enemy);
+    }
+    else{
+      //it is bomber 2
+      bombers2.remove(enemy);
+    }
+  }
+
+  function sendCornduster() {
+    var x = 1200;
+    var y = Phaser.Math.Between(0, 540);
+    var cornduster = corndusters.create(x,y,'cornduster').setOrigin(0);
+    cornduster.setVelocityX(-200);
+    cornduster.anims.play('cornduster', true);
+    cornduster.name = 'cornduster';
+    cornduster.damage = 20;
+  }
+
+  function sendInterceptor() {
+    var x = 1250;
+    var y = Phaser.Math.Between(0, 530);
+    var interceptor = interceptors.create(x,y,'interceptor').setOrigin(0);
+    interceptor.setVelocityX(-350);
+    interceptor.anims.play('interceptor', true);
+    interceptor.name = 'interceptor';
+    interceptor.damage = 20;
+  }
+
+  function sendDestroyer() {
+    var x = 1250;
+    var y = Phaser.Math.Between(0, 520);
+    var destroyer = destroyers.create(x,y,'destroyer').setOrigin(0);
+    destroyer.setVelocityX(-300);
+    destroyer.anims.play('destroyer', true);
+    destroyer.name = 'destroyer';
+    destroyer.damage = 25;
+  }
+
+  function sendBombers1(){
+    sendBomber1();
+    this.time.addEvent({ delay: 3000, callback: sendBomber1, callbackScope: this, loop: false });
+    this.time.addEvent({ delay: 6000, callback: sendBomber1, callbackScope: this, loop: false });
+    this.time.addEvent({ delay: 9000, callback: sendBomber1, callbackScope: this, loop: false });
+  }
+
+  function sendBomber1() {
+    var x = 1000;
+    var y = 600;
+    var bomber1 = bombers1.create(x,y,'bomber1').setOrigin(0);
+    bomber1.setVelocityY(-50);
+    bomber1.name = 'bomber1';
+    bomber1.damage = 25;
+  }
+
+  function sendBombers2(){
+    sendBomber2();
+    this.time.addEvent({ delay: 3000, callback: sendBomber2, callbackScope: this, loop: false });
+    this.time.addEvent({ delay: 6000, callback: sendBomber2, callbackScope: this, loop: false });
+    this.time.addEvent({ delay: 9000, callback: sendBomber2, callbackScope: this, loop: false });
+  }
+
+  function sendBomber2() {
+    var x = 1000;
+    var y = 600;
+    var bomber2 = bombers2.create(x,y,'bomber2').setOrigin(0);
+    bomber2.setVelocityY(-50);
+    bomber2.name = 'bomber2';
+    bomber2.damage = 25;
+  }
+
+</script>
+
+</body>
+</html>
