@@ -48,6 +48,7 @@
       this.load.spritesheet('destroyer', 'assets/destroyer.png', {frameWidth: 47, frameHeight: 80});
       this.load.image('bomber1', 'assets/bomber1.png');
       this.load.image('bomber2', 'assets/bomber2.png');
+      this.load.image('bullet', 'assets/bullet.png');
   }
 
   var cursors;
@@ -57,7 +58,8 @@
   var destroyers;
   var bombers1;
   var bombers2;
-  var bullets
+  var bullets;
+  var lastPlayerBullet = 0;
 
   function create(){
     //  Set the camera bounds to be the size of the image
@@ -66,6 +68,9 @@
 
     //add background
     this.tileSprite = this.add.tileSprite(0,0,1200,600,'sky').setOrigin(0);
+
+    //CREATE BULLETS
+    bullets = this.physics.add.group();
 
     //CREATE A PLAYER
     //add plyaer's airplane
@@ -140,7 +145,7 @@
 
   }
 
-  function update(){
+  function update(time){
 
    //player moves
     if (cursors.left.isDown)
@@ -165,6 +170,13 @@
    }
    else{
       player.setVelocityY(0);
+   }
+
+
+   //make player fire bullets
+   if((time-lastPlayerBullet)>200){
+     fire(player.x+30, player.y, 600);
+     lastPlayerBullet = time;
    }
 
    //create an array of enemies that are outside the world and must be removed
@@ -201,9 +213,15 @@
      }
    });
 
+   bullets.children.iterate(function(child){
+     if(child.x<0 || child.x>1200 || child.y<0 || child.y>600){
+       toRemove.push(child);
+     }
+   });
+
    while(toRemove.length>0){
      var e = toRemove.pop();
-     removeEnemy(e);
+     removeObject(e);
    }
 
    //background moves
@@ -212,27 +230,30 @@
 
   function enemyCollide(player, enemy){
     player.hp -= enemy.damage;
-    removeEnemy(enemy);
+    removeObject(enemy);
   }
 
-  function removeEnemy(enemy){
-    enemy.disableBody(true,true);
+  function removeObject(object){
+    object.disableBody(true,true);
     //remove enemy from the group
-    if(enemy.name == 'cornduster'){
-      corndusters.remove(enemy);
+    if(object.name == 'cornduster'){
+      corndusters.remove(object);
     }
-    else if(enemy.name == 'interceptor'){
-      interceptors.remove(enemy)
+    else if(object.name == 'interceptor'){
+      interceptors.remove(object)
     }
-    else if(enemy.name == 'destroyer'){
-      destroyers.remove(enemy);
+    else if(object.name == 'destroyer'){
+      destroyers.remove(object);
     }
-    else if(enemy.name == 'bomber1'){
-      bombers1.remove(enemy);
+    else if(object.name == 'bomber1'){
+      bombers1.remove(object);
+    }
+    else if(object.name == 'bomber2'){
+      bombers2.remove(object);
     }
     else{
-      //it is bomber 2
-      bombers2.remove(enemy);
+      //it is a bullet
+      bullets.remove(object);
     }
   }
 
@@ -247,7 +268,7 @@
   }
 
   function sendInterceptor() {
-    var x = 1250;
+    var x = 1200;
     var y = Phaser.Math.Between(0, 530);
     var interceptor = interceptors.create(x,y,'interceptor').setOrigin(0);
     interceptor.setVelocityX(-350);
@@ -257,7 +278,7 @@
   }
 
   function sendDestroyer() {
-    var x = 1250;
+    var x = 1200;
     var y = Phaser.Math.Between(0, 520);
     var destroyer = destroyers.create(x,y,'destroyer').setOrigin(0);
     destroyer.setVelocityX(-300);
@@ -296,6 +317,12 @@
     bomber2.setVelocityY(-50);
     bomber2.name = 'bomber2';
     bomber2.damage = 25;
+  }
+
+  function fire(x, y, xVelocity){
+    var bullet = bullets.create(x,y,'bullet').setOrigin(0);
+    bullet.setVelocityX(xVelocity);
+    bullet.name = 'bullet';
   }
 
 </script>
