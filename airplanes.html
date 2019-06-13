@@ -48,11 +48,15 @@
       this.load.spritesheet('destroyer', 'assets/destroyer.png', {frameWidth: 47, frameHeight: 80});
       this.load.image('bomber1', 'assets/bomber1.png');
       this.load.image('bomber2', 'assets/bomber2.png');
-      this.load.image('playerBullet', 'assets/bullet.png');
+      this.load.image('playerBullet', 'assets/playerBullet.png');
+      this.load.image('enemyBullet', 'assets/enemyBullet.png');
+      this.load.image('missile1', 'assets/missile.png');
+      this.load.image('missile2', 'assets/missile2.png');
   }
 
   var physics;
   var cursors;
+  //game objects
   var player;
   var corndusters;
   var interceptors;
@@ -60,8 +64,12 @@
   var bombers1;
   var bombers2;
   var bullets;
+  //game stats
   var gameOver;
-  var lastPlayerBullet = 0;
+  var distanceText;
+  var distance = 0;
+  var scoreText;
+  var healthText;
 
   function create(){
 
@@ -74,6 +82,9 @@
     //add background
     this.tileSprite = this.add.tileSprite(0,0,1200,600,'sky').setOrigin(0);
 
+    //create stats texts
+    distanceText = this.add.text(16,16,'distance: 0',{fontSize: '32px', fill: '#000' });
+
     //CREATE BULLETS
     bullets = this.physics.add.group();
 
@@ -84,6 +95,8 @@
     player.setMaxVelocity(300);
     player.hp = 200;
     player.damage = 10;
+    player.points = 0;
+    player.lastFired = 0;
 
     //create animation for the player's airplane
     this.anims.create({
@@ -93,8 +106,6 @@
       repeat: -1
     })
     player.anims.play('player', true);
-
-    player.hp = 200;
 
     //CREATE ENEMIES:
     //1. Corn Duster
@@ -196,21 +207,19 @@
           player.angle = 0;
         }
       }
-
-
    }
 
-
    //make player fire bullets
-   if((time-lastPlayerBullet)>200){
+   if((time-player.lastFired)>200){
      fire(player.x+30, player.y, player.angle, 600, 'playerBullet');
-     lastPlayerBullet = time;
+     player.lastFired = time;
    }
 
    //create an array of enemies that are outside the world and must be removed
    var toRemove = new Array();
 
    //check if enemy of each type has negative x (enemy left the battlefield)
+   //also, fire if needed
    corndusters.children.iterate(function(child){
      if(child.x < -20 || child.hp<=0){
        toRemove.push(child);
@@ -218,11 +227,15 @@
      if(child.hp<=0){
        //play death animation
      }
+
    });
 
    interceptors.children.iterate(function(child){
      if(child.x < -20 || child.hp<=0){
        toRemove.push(child);
+     }else if((time - child.lastFired)>2000){
+       fire(child.x, child.y+30, 180, 450, 'enemyBullet');
+       child.lastFired = time;
      }
      if(child.hp<=0){
        //play death animation
@@ -232,6 +245,9 @@
    destroyers.children.iterate(function(child){
      if(child.x < -20 || child.hp<=0){
        toRemove.push(child);
+     }else if((time - child.lastFired)>1000){
+       fire(child.x, child.y+30, 180, 450, 'enemyBullet');
+       child.lastFired = time;
      }
      if(child.hp<=0){
        //play death animation
@@ -241,6 +257,9 @@
    bombers1.children.iterate(function(child){
      if(child.y < -20 || child.hp<=0){
        toRemove.push(child);
+     }else if((time - child.lastFired)>1000){
+       fire(child.x, child.y+30, 180, 450, 'missile1');
+       child.lastFired = time;
      }
      if(child.hp<=0){
        //play death animation
@@ -250,6 +269,9 @@
    bombers2.children.iterate(function(child){
      if(child.y < -20 || child.hp<=0){
        toRemove.push(child);
+     }else if((time - child.lastFired)>2000){
+       fire(child.x, child.y+30, Phaser.Math.Angle.Between(child.x,child.y+30,player.x,player.y), 450, 'missile2');
+       child.lastFired = time;
      }
      if(child.hp<=0){
        //play death animation
@@ -269,6 +291,7 @@
 
    //background moves
    this.tileSprite.tilePositionX += 0.75;
+   distanceText.text = distance;
   }
 
   function enemyCollide(player, enemy){
@@ -309,6 +332,7 @@
     cornduster.name = 'cornduster';
     cornduster.damage = 20;
     cornduster.hp = 30;
+    cornduster.points = 5;
   }
 
   function sendInterceptor() {
@@ -320,6 +344,8 @@
     interceptor.name = 'interceptor';
     interceptor.damage = 20;
     interceptor.hp = 30;
+    interceptor.lastFired = 0;
+    interceptor.points = 10;
   }
 
   function sendDestroyer() {
@@ -331,6 +357,8 @@
     destroyer.name = 'destroyer';
     destroyer.damage = 25;
     destroyer.hp = 50;
+    destroyer.lastFired = 0;
+    destroyer.points = 20;
   }
 
   function sendBombers1(){
@@ -344,12 +372,14 @@
     var x = 1000;
     var y = 630;
     var bomber1 = bombers1.create(x,y,'bomber1').setOrigin(0);
-    bomber1.angle = -100;
-    physics.velocityFromAngle(bomber1.angle, 50, bomber1.body.velocity);
-    //bomber1.setVelocityY(-50);
+    //bomber1.angle = -100;
+    //physics.velocityFromAngle(bomber1.angle, 50, bomber1.body.velocity);
+    bomber1.setVelocityY(-50);
     bomber1.name = 'bomber1';
     bomber1.damage = 25;
     bomber1.hp = 70;
+    bomber1.lastFired = 0;
+    bomber1.points = 15;
   }
 
   function sendBombers2(){
@@ -363,34 +393,46 @@
     var x = 1000;
     var y = 630;
     var bomber2 = bombers2.create(x,y,'bomber2').setOrigin(0);
-    bomber2.angle = -100;
-    physics.velocityFromAngle(bomber2.angle, 50, bomber2.body.velocity);
-    //bomber2.setVelocityY(-50);
+    //bomber2.angle = -100;
+    //physics.velocityFromAngle(bomber2.angle, 50, bomber2.body.velocity);
+    bomber2.setVelocityY(-50);
     bomber2.name = 'bomber2';
     bomber2.damage = 25;
     bomber2.hp = 70;
+    bomber2.lastFired = 0;
+    bomber2.points = 20;
   }
 
-  function fire(x, y,angle, velocity, type){
+  function fire(x, y, angle, velocity, type){
     var bullet = bullets.create(x,y,type).setOrigin(0);
-    physics.velocityFromAngle(angle, velocity, bullet.body.velocity);
-    bullet.name = type;
-    if(type=='playerBullet'){
+    if(type == 'missile2'){
+      bullet.damage = 30;
+      physics.velocityFromRotation(angle, velocity, bullet.body.velocity);
+      bullet.rotation = angle;
+    }else{
       bullet.damage = 10;
+      physics.velocityFromAngle(angle, velocity, bullet.body.velocity);
+    }
+
+    bullet.name = type;
+
+
+    if(type=='playerBullet'){
       this.physics.add.overlap(corndusters, bullet, hitEnemy, null, this);
       this.physics.add.overlap(interceptors, bullet, hitEnemy, null, this);
       this.physics.add.overlap(destroyers, bullet, hitEnemy, null, this);
       this.physics.add.overlap(bombers1, bullet, hitEnemy, null, this);
       this.physics.add.overlap(bombers2, bullet, hitEnemy, null, this);
-    }else{
-      bullet.damage = 10;
+    }
+    else{
       this.physics.add.overlap(player, bullet, hitPlayer, null, this);
     }
   }
 
-  function hitPlayer(bullet, player){
+
+  function hitPlayer(player, bullet){
     player.hp -= bullet.damage;
-    if(player.hp<0){
+    if(player.hp<=0){
       gameOver = true;
     }
     bullet.disableBody(true,true);
@@ -401,6 +443,7 @@
     enemy.hp -= bullet.damage;
     bullet.disableBody(true,true);
     bullets.remove(bullet);
+    player.points += enemy.points;
   }
 
 </script>
