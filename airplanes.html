@@ -48,9 +48,10 @@
       this.load.spritesheet('destroyer', 'assets/destroyer.png', {frameWidth: 47, frameHeight: 80});
       this.load.image('bomber1', 'assets/bomber1.png');
       this.load.image('bomber2', 'assets/bomber2.png');
-      this.load.image('bullet', 'assets/bullet.png');
+      this.load.image('playerBullet', 'assets/bullet.png');
   }
 
+  var physics;
   var cursors;
   var player;
   var corndusters;
@@ -59,9 +60,13 @@
   var bombers1;
   var bombers2;
   var bullets;
+  var gameOver;
   var lastPlayerBullet = 0;
 
   function create(){
+
+    physics = this.physics;
+
     //  Set the camera bounds to be the size of the image
     this.cameras.main.setBounds(0, 0, 1200, 600);
     this.physics.world.setBounds(0, 0, 1200, 600);
@@ -76,6 +81,9 @@
     //add plyaer's airplane
     player = this.physics.add.sprite(400,400,'player');
     player.setCollideWorldBounds(true);
+    player.setMaxVelocity(300);
+    player.hp = 200;
+    player.damage = 10;
 
     //create animation for the player's airplane
     this.anims.create({
@@ -143,6 +151,7 @@
     //add cursor keys
     cursors = this.input.keyboard.createCursorKeys();
 
+    gameOver = false;
   }
 
   function update(time){
@@ -164,18 +173,37 @@
    if (cursors.up.isDown)
    {
        player.setVelocityY(-300);
+       if(player.angle >= -21){
+         player.angle -= 3;
+       }
    }
    else if(cursors.down.isDown){
       player.setVelocityY(300)
+      if(player.angle <= 21){
+        player.angle += 3;
+      }
    }
    else{
       player.setVelocityY(0);
+      if(player.angle > 0){
+        player.angle -=5;
+        if(player.angle < 0){
+          player.angle = 0;
+        }
+      }else if(player.angle < 0){
+        player.angle +=5;
+        if(player.angle > 0){
+          player.angle = 0;
+        }
+      }
+
+
    }
 
 
    //make player fire bullets
    if((time-lastPlayerBullet)>200){
-     fire(player.x+30, player.y, 600);
+     fire(player.x+30, player.y, player.angle, 600, 'playerBullet');
      lastPlayerBullet = time;
    }
 
@@ -184,32 +212,47 @@
 
    //check if enemy of each type has negative x (enemy left the battlefield)
    corndusters.children.iterate(function(child){
-     if(child.x < -20){
+     if(child.x < -20 || child.hp<=0){
        toRemove.push(child);
+     }
+     if(child.hp<=0){
+       //play death animation
      }
    });
 
    interceptors.children.iterate(function(child){
-     if(child.x < -20){
+     if(child.x < -20 || child.hp<=0){
        toRemove.push(child);
+     }
+     if(child.hp<=0){
+       //play death animation
      }
    });
 
    destroyers.children.iterate(function(child){
-     if(child.x < -20){
+     if(child.x < -20 || child.hp<=0){
        toRemove.push(child);
+     }
+     if(child.hp<=0){
+       //play death animation
      }
    });
 
    bombers1.children.iterate(function(child){
-     if(child.y < -20){
+     if(child.y < -20 || child.hp<=0){
        toRemove.push(child);
+     }
+     if(child.hp<=0){
+       //play death animation
      }
    });
 
    bombers2.children.iterate(function(child){
-     if(child.y < -20){
+     if(child.y < -20 || child.hp<=0){
        toRemove.push(child);
+     }
+     if(child.hp<=0){
+       //play death animation
      }
    });
 
@@ -265,6 +308,7 @@
     cornduster.anims.play('cornduster', true);
     cornduster.name = 'cornduster';
     cornduster.damage = 20;
+    cornduster.hp = 30;
   }
 
   function sendInterceptor() {
@@ -275,6 +319,7 @@
     interceptor.anims.play('interceptor', true);
     interceptor.name = 'interceptor';
     interceptor.damage = 20;
+    interceptor.hp = 30;
   }
 
   function sendDestroyer() {
@@ -285,6 +330,7 @@
     destroyer.anims.play('destroyer', true);
     destroyer.name = 'destroyer';
     destroyer.damage = 25;
+    destroyer.hp = 50;
   }
 
   function sendBombers1(){
@@ -296,11 +342,14 @@
 
   function sendBomber1() {
     var x = 1000;
-    var y = 600;
+    var y = 630;
     var bomber1 = bombers1.create(x,y,'bomber1').setOrigin(0);
-    bomber1.setVelocityY(-50);
+    bomber1.angle = -100;
+    physics.velocityFromAngle(bomber1.angle, 50, bomber1.body.velocity);
+    //bomber1.setVelocityY(-50);
     bomber1.name = 'bomber1';
     bomber1.damage = 25;
+    bomber1.hp = 70;
   }
 
   function sendBombers2(){
@@ -312,17 +361,46 @@
 
   function sendBomber2() {
     var x = 1000;
-    var y = 600;
+    var y = 630;
     var bomber2 = bombers2.create(x,y,'bomber2').setOrigin(0);
-    bomber2.setVelocityY(-50);
+    bomber2.angle = -100;
+    physics.velocityFromAngle(bomber2.angle, 50, bomber2.body.velocity);
+    //bomber2.setVelocityY(-50);
     bomber2.name = 'bomber2';
     bomber2.damage = 25;
+    bomber2.hp = 70;
   }
 
-  function fire(x, y, xVelocity){
-    var bullet = bullets.create(x,y,'bullet').setOrigin(0);
-    bullet.setVelocityX(xVelocity);
-    bullet.name = 'bullet';
+  function fire(x, y,angle, velocity, type){
+    var bullet = bullets.create(x,y,type).setOrigin(0);
+    physics.velocityFromAngle(angle, velocity, bullet.body.velocity);
+    bullet.name = type;
+    if(type=='playerBullet'){
+      bullet.damage = 10;
+      this.physics.add.overlap(corndusters, bullet, hitEnemy, null, this);
+      this.physics.add.overlap(interceptors, bullet, hitEnemy, null, this);
+      this.physics.add.overlap(destroyers, bullet, hitEnemy, null, this);
+      this.physics.add.overlap(bombers1, bullet, hitEnemy, null, this);
+      this.physics.add.overlap(bombers2, bullet, hitEnemy, null, this);
+    }else{
+      bullet.damage = 10;
+      this.physics.add.overlap(player, bullet, hitPlayer, null, this);
+    }
+  }
+
+  function hitPlayer(bullet, player){
+    player.hp -= bullet.damage;
+    if(player.hp<0){
+      gameOver = true;
+    }
+    bullet.disableBody(true,true);
+    bullets.remove(bullet);
+  }
+
+  function hitEnemy(bullet, enemy){
+    enemy.hp -= bullet.damage;
+    bullet.disableBody(true,true);
+    bullets.remove(bullet);
   }
 
 </script>
