@@ -224,35 +224,25 @@
      if(child.x < -20 || child.hp<=0){
        toRemove.push(child);
      }else{
-       //make conduster move with "S" trajectory
-       if(child.y>=child.maxY){
-         child.setVelocityY(-25);
-         child.direction = 'up';
-         concole.log(child.angle);
-       }else if(child.y<=child.minY){
-         child.setVelocityY(25);
-         child.direction = 'down';
-       }
+       var angle = child.ang;
+       console.log(angle);
+       if(child.direction == 'down'){
+         if(angle <= 134){
+           child.direction = 'up';
+         }
+         angle -= 1;
 
-       //change the angle of rotation according to direction
-       if(child.direction == 'up'){
-         //rotate until some point
-         if(child.angle <= 21 && child.y-child.minY>10){
-           child.angle += 0.5;
-         }
-         if(child.y-child.minY<10){
-           //if close to the max point start rotating in the opposite direction
-           child.angle -= 0.5;
-         }
+         physics.velocityFromAngle(angle, 200, child.body.velocity);
        }else{
-         if(child.angle >= -21 && child.y-child.maxY<-10){
-           child.angle -= 0.5;
+         if(angle >= 224){
+           child.direction = 'down';
          }
-         if(child.y-child.maxY>-10){
-           //if close to the max point start rotating in the opposite direction
-           child.angle += 0.5;
-         }
+         angle += 1;
+         physics.velocityFromAngle(angle, 200, child.body.velocity);
        }
+       child.ang = angle;
+
+
      }
      if(child.hp<=0){
        //play death animation
@@ -358,16 +348,16 @@
     //var y = Phaser.Math.Between(0, 540);
     var y = Phaser.Math.Between(35, 500);
     var cornduster = corndusters.create(x,y,'cornduster').setOrigin(0);
-    cornduster.setVelocityX(-200);
-    cornduster.setVelocityY(-25);
+    //cornduster.setVelocityX(-200);
+    //cornduster.setVelocityY(-25);
     cornduster.anims.play('cornduster', true);
     cornduster.name = 'cornduster';
     cornduster.damage = 20;
     cornduster.hp = 30;
     cornduster.points = 5;
-    cornduster.maxY = y+40;
-    cornduster.minY = y-40;
-    cornduster.direction = 'up'; //used to determine the agnle of rotation in update function
+    cornduster.direction = 'down';
+    cornduster.ang = 180;
+    physics.velocityFromAngle(cornduster.ang, 50, cornduster.body.velocity);
   }
 
   function sendInterceptor() {
