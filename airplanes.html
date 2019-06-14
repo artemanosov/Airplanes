@@ -46,7 +46,8 @@
       this.load.spritesheet('cornduster', 'assets/cornduster.png', {frameWidth: 52, frameHeight: 60});
       this.load.spritesheet('interceptor', 'assets/interceptor.png', {frameWidth: 38, frameHeight: 70});
       this.load.spritesheet('destroyer', 'assets/destroyer.png', {frameWidth: 47, frameHeight: 80});
-      this.load.spritesheet('explosion', 'assets/explosion.png', {frameWidth: 64, frameHeight: 64});
+      this.load.spritesheet('kaboom', 'assets/explosion.png', {frameWidth: 64, frameHeight: 64});
+      this.load.spritesheet('bulletHit', 'assets/sparkles.png', {frameWidth: 32, frameHeight: 32});
       this.load.image('bomber1', 'assets/bomber1.png');
       this.load.image('bomber2', 'assets/bomber2.png');
       this.load.image('playerBullet', 'assets/playerBullet.png');
@@ -54,7 +55,8 @@
       this.load.image('missile1', 'assets/missile.png');
       this.load.image('missile2', 'assets/missile2.png');
       this.load.image('health', 'assets/health.png');
-      this.load.image('shield', 'assets/shiled.png');
+      this.load.image('shield', 'assets/shield.png');
+      this.load.image('gunUpgrade', 'assets/gunUpgrade.png');
   }
 
   var physics;
@@ -75,11 +77,14 @@
   var healthText;
   //collectibles
   var healthPoints;
+  var shields;
+  var gunUpgrades;
+  //effects
+  var explosions;
+  var sparkles;
 
   function create(){
-
     physics = this.physics;
-
     //  Set the camera bounds to be the size of the image
     this.cameras.main.setBounds(0, 0, 1200, 600);
     this.physics.world.setBounds(0, 0, 1200, 600);
@@ -100,7 +105,7 @@
     player = this.physics.add.sprite(400,400,'player');
     player.setCollideWorldBounds(true);
     player.setMaxVelocity(300);
-    player.hp = 200;
+    player.hp = 2000000000;
     player.damage = 10;
     player.points = 0;
     player.lastFired = 0;
@@ -170,23 +175,53 @@
 
     //ADD COLLECTIBLES
     //1. First Aid Kit
-    //2. Time stop
+    //2. Shield
     //3. Gun upgrade
-    //4. Shield
 
     //Create First Aid Kit
     healthPoints = this.physics.add.group();
     this.physics.add.overlap(player, healthPoints, getCollectible, null, this);
-    this.time.addEvent({ delay: 1000, callback: createHP, callbackScope: this, loop: true });
+    this.time.addEvent({ delay: 10000, callback: createHP, callbackScope: this, loop: true });
 
-    //create explosion animation
+    //Create Shield
+    shields = this.physics.add.group();
+    this.physics.add.overlap(player, shields, getCollectible, null, this);
+    this.time.addEvent({ delay: 20000, callback: createShield, callbackScope: this, loop: true });
 
+    //Create Gun Upgrade
+    gunUpgrades = this.physics.add.group();
+    this.physics.add.overlap(player, gunUpgrades, getCollectible, null, this);
+    this.time.addEvent({ delay: 10000, callback: createGunUpgrade, callbackScope: this, loop: true });
+
+    //CREATE EFFECTS
+    //1. explosion
+    //2. bullet hit
+
+    //create Explosion animation
     this.anims.create({
-      key: 'explosion',
-      frames: this.anims.generateFrameNumbers('explosion', { start: 0, end: 15 }),
+      key: 'explode',
+      frames: this.anims.generateFrameNumbers('kaboom', { start: 0, end: 15 }),
       frameRate: 30,
-      repeat: -1
+      repeat: 0,
+      hideOnComplete: true
     })
+    explosions = this.physics.add.group({
+      defaultKey: 'kaboom',
+      maxSize: 20
+    });
+
+    //create Bullet Hit
+    this.anims.create({
+      key: 'hit',
+      frames: this.anims.generateFrameNumbers('bulletHit', { start: 0, end: 3 }),
+      frameRate: 60,
+      repeat: 0,
+      hideOnComplete: true
+    })
+    sparkles = this.physics.add.group({
+      defaultKey: 'bulletHit',
+      maxSize: 40
+    });
 
     //add cursor keys
     cursors = this.input.keyboard.createCursorKeys();
@@ -196,156 +231,174 @@
 
   function update(time){
 
-   //player moves
-    if (cursors.left.isDown)
-   {
-       player.setVelocityX(-200);
-   }
-   else if (cursors.right.isDown)
-   {
-       player.setVelocityX(200);
-   }
-   else
-   {
-       player.setVelocityX(0);
-   }
-
-   if (cursors.up.isDown)
-   {
-       player.setVelocityY(-300);
-       if(player.rotation >= -0.5){
-         player.rotation -= 0.1;
-       }
-   }
-   else if(cursors.down.isDown){
-      player.setVelocityY(300)
-      if(player.rotation <= 0.5){
-        player.rotation += 0.1;
+    if(!gameOver){
+      //player moves
+       if (cursors.left.isDown)
+      {
+          player.setVelocityX(-200);
       }
-   }
-   else{
-      player.setVelocityY(0);
-      if(player.rotation > 0){
-        player.rotation -= 0.1;
-        if(player.rotation < 0){
-          player.rotation = 0;
-        }
-      }else if(player.rotation < 0){
-        player.rotation +=0.1;
-        if(player.rotation > 0){
-          player.rotation = 0;
-        }
+      else if (cursors.right.isDown)
+      {
+          player.setVelocityX(200);
       }
-   }
+      else
+      {
+          player.setVelocityX(0);
+      }
 
-   //make player fire bullets
-   if((time-player.lastFired)>player.fireDelay){
-     fire(player.x+30, player.y, player.angle, 600, 'playerBullet');
-     player.lastFired = time;
-   }
-
-   //create an array of enemies that are outside the world and must be removed
-   var toRemove = new Array();
-
-   //check if enemy of each type has negative x (enemy left the battlefield)
-   //also, fire if needed
-   corndusters.children.iterate(function(child){
-     if(child.x < -20 || child.hp<=0){
-       toRemove.push(child);
-     }else{
-       var angle = child.ang;
-       if(child.direction == 'down'){
-         if(angle <= 134){
-           child.direction = 'up';
+      if (cursors.up.isDown)
+      {
+          player.setVelocityY(-300);
+          if(player.rotation >= -0.5){
+            player.rotation -= 0.1;
+          }
+      }
+      else if(cursors.down.isDown){
+         player.setVelocityY(300)
+         if(player.rotation <= 0.5){
+           player.rotation += 0.1;
          }
-         angle -= 1;
-
-         physics.velocityFromAngle(angle, 200, child.body.velocity);
-       }else{
-         if(angle >= 224){
-           child.direction = 'down';
+      }
+      else{
+         player.setVelocityY(0);
+         if(player.rotation > 0){
+           player.rotation -= 0.1;
+           if(player.rotation < 0){
+             player.rotation = 0;
+           }
+         }else if(player.rotation < 0){
+           player.rotation +=0.1;
+           if(player.rotation > 0){
+             player.rotation = 0;
+           }
          }
-         angle += 1;
-         physics.velocityFromAngle(angle, 200, child.body.velocity);
-       }
-       child.ang = angle;
+      }
+
+      //make player fire bullets
+      if((time-player.lastFired)>player.fireDelay){
+        fire(player.x+30, player.y, player.angle, 600, 'playerBullet');
+        player.lastFired = time;
+      }
+
+      //create an array of enemies that are outside the world and must be removed
+      var toRemove = new Array();
+
+      //check if enemy of each type has negative x (enemy left the battlefield)
+      //also, fire if needed
+      corndusters.children.iterate(function(child){
+        if(child.x < -20 || child.hp<=0){
+          toRemove.push(child);
+        }else{
+          var angle = child.ang;
+          if(child.direction == 'down'){
+            if(angle <= 134){
+              child.direction = 'up';
+            }
+            angle -= 1;
+
+            physics.velocityFromAngle(angle, 200, child.body.velocity);
+          }else{
+            if(angle >= 224){
+              child.direction = 'down';
+            }
+            angle += 1;
+            physics.velocityFromAngle(angle, 200, child.body.velocity);
+          }
+          child.ang = angle;
 
 
-     }
-     if(child.hp<=0){
-       //play death animation
-     }
+        }
+        if(child.hp<=0){
+          //play death animation
+          explode(child.x,child.y);
+        }
 
-   });
+      });
 
-   interceptors.children.iterate(function(child){
-     if(child.x < -20 || child.hp<=0){
-       toRemove.push(child);
-     }else if((time - child.lastFired)>2000){
-       fire(child.x, child.y+30, 180, 450, 'enemyBullet');
-       child.lastFired = time;
-     }
-     if(child.hp<=0){
-       //play death animation
-     }
-   });
+      interceptors.children.iterate(function(child){
+        if(child.x < -20 || child.hp<=0){
+          toRemove.push(child);
+        }else if((time - child.lastFired)>2000){
+          fire(child.x, child.y+30, 180, 450, 'enemyBullet');
+          child.lastFired = time;
+        }
+        if(child.hp<=0){
+          //play death animation
+          explode(child.x,child.y);
+        }
+      });
 
-   destroyers.children.iterate(function(child){
-     if(child.x < -20 || child.hp<=0){
-       toRemove.push(child);
-     }else if((time - child.lastFired)>1000){
-       fire(child.x, child.y+30, 180, 450, 'enemyBullet');
-       child.lastFired = time;
-     }
-     if(child.hp<=0){
-       //play death animation
-     }
-   });
+      destroyers.children.iterate(function(child){
+        if(child.x < -20 || child.hp<=0){
+          toRemove.push(child);
+        }else if((time - child.lastFired)>1000){
+          fire(child.x, child.y+30, 180, 450, 'enemyBullet');
+          child.lastFired = time;
+        }
+        if(child.hp<=0){
+          //play death animation
+          explode(child.x,child.y);
+        }
+      });
 
-   bombers1.children.iterate(function(child){
-     if(child.y < -20 || child.hp<=0){
-       toRemove.push(child);
-     }else if((time - child.lastFired)>1000){
-       fire(child.x, child.y+30, 180, 450, 'missile1');
-       child.lastFired = time;
-     }
-     if(child.hp<=0){
-       //play death animation
-     }
-   });
+      bombers1.children.iterate(function(child){
+        if(child.y < -20 || child.hp<=0){
+          toRemove.push(child);
+        }else if((time - child.lastFired)>1000){
+          fire(child.x, child.y+30, 180, 450, 'missile1');
+          child.lastFired = time;
+        }
+        if(child.hp<=0){
+          //play death animation
+          explode(child.x,child.y);
+        }
+      });
 
-   bombers2.children.iterate(function(child){
-     if(child.y < -20 || child.hp<=0){
-       toRemove.push(child);
-     }else if((time - child.lastFired)>2000){
-       fire(child.x, child.y+30, Phaser.Math.Angle.Between(child.x,child.y+30,player.x,player.y), 450, 'missile2');
-       child.lastFired = time;
-     }
-     if(child.hp<=0){
-       //play death animation
-     }
-   });
+      bombers2.children.iterate(function(child){
+        if(child.y < -20 || child.hp<=0){
+          toRemove.push(child);
+        }else if((time - child.lastFired)>2000){
+          fire(child.x, child.y+30, Phaser.Math.Angle.Between(child.x,child.y+30,player.x,player.y), 450, 'missile2');
+          child.lastFired = time;
+        }
+        if(child.hp<=0){
+          //play death animation
+          explode(child.x,child.y);
+        }
+      });
 
-   bullets.children.iterate(function(child){
-     if(child.x<0 || child.x>1200 || child.y<0 || child.y>600){
-       toRemove.push(child);
-     }
-   });
+      bullets.children.iterate(function(child){
+        if(child.x<0 || child.x>1200 || child.y<0 || child.y>600){
+          toRemove.push(child);
+        }
+      });
 
-   while(toRemove.length>0){
-     var e = toRemove.pop();
-     removeObject(e);
-   }
+      while(toRemove.length>0){
+        var e = toRemove.pop();
+        removeObject(e);
+      }
 
-   //background moves
-   this.tileSprite.tilePositionX += 0.75;
-   distanceText.text = 'distance: '+distance;
-   scoreText.text = 'score: '+player.points;
-   healthText.text = 'HP: '+player.hp;
+      //background moves
+      this.tileSprite.tilePositionX += 0.75;
+      distanceText.text = 'distance: '+distance;
+      scoreText.text = 'score: '+player.points;
+      healthText.text = 'HP: '+player.hp;
+    }else{
+      this.time.removeAllEvents();
+      this.time.addEvent({ delay: 2000, callback: sendInterceptor, callbackScope: this, loop: true });
+      player.disableBody(true,true);
+    }
   }
 
   function enemyCollide(player, enemy){
-    player.hp -= enemy.damage;
+    if(!player.shiled){
+      player.hp -= enemy.damage;
+    }
+
+    if(player.hp<0){
+      gameOver = true;
+    }
+    explode(enemy.x,enemy.y);
     removeObject(enemy);
   }
 
@@ -494,6 +547,7 @@
     if(player.hp<=0){
       gameOver = true;
     }
+    createSparkles(bullet.x,bullet.y);
     bullet.disableBody(true,true);
     bullets.remove(bullet);
   }
@@ -501,12 +555,13 @@
   function hitEnemy(bullet, enemy){
     enemy.hp -= bullet.damage;
     bullet.disableBody(true,true);
+    createSparkles(bullet.x,bullet.y);
     bullets.remove(bullet);
     player.points += enemy.points;
   }
 
   function getCollectible(player,collectible){
-    collectible.disableBody(true);
+    collectible.disableBody(true,true);
     if(collectible.name == 'healthPoint'){
       player.hp += 50;
       healthPoints.remove(collectible);
@@ -522,15 +577,48 @@
 
   }
 
-  function restoreFireRate(){player.fireDelay = 100;}
+  function restoreFireRate(){player.fireDelay = 200;}
 
-  function shieldOff(){player.shield = false;}
+  function shieldOff(){
+    player.shield = false;
+    player.clearTint();
+  }
 
   function createHP(){
     var x = 1200;
     var y = Phaser.Math.Between(0, 550);
     var healthPoint = healthPoints.create(x,y,'health').setOrigin(0);
     healthPoint.setVelocityX(-100);
+    healthPoint.name = 'healthPoint';
+  }
+
+  function createShield() {
+    var x = 1200;
+    var y = Phaser.Math.Between(0, 550);
+    var shield = shields.create(x,y,'shield').setOrigin(0);
+    shield.setVelocityX(-100);
+    shield.name = 'shield';
+  }
+
+  function createGunUpgrade(){
+    var x = 1200;
+    var y = Phaser.Math.Between(0, 550);
+    var gunUpgrade = gunUpgrades.create(x,y,'gunUpgrade').setOrigin(0);
+    gunUpgrade.setVelocityX(-100);
+    gunUpgrade.name = 'gunUpgrade';
+  }
+
+  function explode(x,y){
+    var explosion = explosions.get(x,y).setActive(true);
+    explosion.setOrigin(0);
+    explosion.play('explode');
+    explosion.on('animationcomplete', function(){explosion.destroy();});
+  }
+
+  function createSparkles(x,y){
+    var hitSparkles = sparkles.get(x,y).setActive(true);
+    hitSparkles.play('hit');
+    hitSparkles.on('animationcomplete', function(){hitSparkles.destroy();});
   }
 </script>
 
