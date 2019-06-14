@@ -84,7 +84,6 @@
   var sparkles;
 
   function create(){
-    physics = this.physics;
     //  Set the camera bounds to be the size of the image
     this.cameras.main.setBounds(0, 0, 1200, 600);
     this.physics.world.setBounds(0, 0, 1200, 600);
@@ -296,13 +295,13 @@
             }
             angle -= 1;
 
-            physics.velocityFromAngle(angle, 200, child.body.velocity);
+            this.physics.velocityFromAngle(angle, 200, child.body.velocity);
           }else{
             if(angle >= 224){
               child.direction = 'down';
             }
             angle += 1;
-            physics.velocityFromAngle(angle, 200, child.body.velocity);
+            this.physics.velocityFromAngle(angle, 200, child.body.velocity);
           }
           child.ang = angle;
 
@@ -440,7 +439,7 @@
     cornduster.points = 5;
     cornduster.direction = 'down';
     cornduster.ang = 180;
-    physics.velocityFromAngle(cornduster.ang, 50, cornduster.body.velocity);
+    this.physics.velocityFromAngle(cornduster.ang, 50, cornduster.body.velocity);
   }
 
   function sendInterceptor() {
@@ -515,11 +514,11 @@
     var bullet = bullets.create(x,y,type).setOrigin(0);
     if(type == 'missile2'){
       bullet.damage = 30;
-      physics.velocityFromRotation(angle, velocity, bullet.body.velocity);
+      this.physics.velocityFromRotation(angle, velocity, bullet.body.velocity);
       bullet.rotation = angle;
     }else{
       bullet.damage = 10;
-      physics.velocityFromAngle(angle, velocity, bullet.body.velocity);
+      this.physics.velocityFromAngle(angle, velocity, bullet.body.velocity);
     }
 
     bullet.name = type;
