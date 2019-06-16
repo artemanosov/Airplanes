@@ -15,6 +15,7 @@ var distanceText;
 var distance;
 var scoreText;
 var healthText;
+var score
 //collectibles
 var healthPoints;
 var shields;
@@ -26,6 +27,11 @@ var sparkles;
 var level;
 var levelText;
 var timeStarted;
+//timers for enemies
+var interTimer;
+var destrTimer;
+var bomber1Timer;
+var bomber2Timer;
 
 class MenuScene extends Phaser.Scene{
   constructor(){
@@ -103,7 +109,7 @@ class MenuScene extends Phaser.Scene{
     });
 
     gameOver = false;
-
+    score = 0;
     //start game scene when "S" is pressed
     this.input.keyboard.on('keyup_S', function(){
       level = 1;

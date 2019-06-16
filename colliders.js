@@ -1,11 +1,8 @@
 function enemyCollide(player, enemy){
-  if(!player.shiled){
-    player.hp -= enemy.damage;
+  if(!player.shield){
+    this.player.hp -= enemy.damage;
   }
 
-  if(player.hp<0){
-    gameOver = true;
-  }
   explode(this,enemy.x,enemy.y);
   removeObject(this,enemy);
 }
@@ -14,10 +11,6 @@ function hitPlayer(player, bullet){
   //apply damage if shield is off
   if(!player.shield){
     player.hp -= bullet.damage;
-  }
-
-  if(player.hp<=0){
-    gameOver = true;
   }
   createSparkles(this,bullet.x,bullet.y);
   bullet.disableBody(true,true);
@@ -37,6 +30,9 @@ function getCollectible(player,collectible){
   collectible.disableBody(true,true);
   if(collectible.name == 'healthPoint'){
     player.hp += 50;
+    if(player.hp>200){
+      player.hp = 200;
+    }
     this.healthPoints.remove(collectible);
   }else if(collectible.name == 'gunUpgrade'){
     player.fireDelay = 100;
