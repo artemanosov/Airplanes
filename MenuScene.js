@@ -8,6 +8,7 @@ var interceptors;
 var destroyers;
 var bombers1;
 var bombers2;
+var strikers;
 var bullets;
 //game stats
 var gameOver;
@@ -48,6 +49,7 @@ class MenuScene extends Phaser.Scene{
     this.load.spritesheet('bulletHit', 'assets/sparkles.png', {frameWidth: 32, frameHeight: 32});
     this.load.image('bomber1', 'assets/bomber1.png');
     this.load.image('bomber2', 'assets/bomber2.png');
+    this.load.image('striker', 'assets/striker.png');
     this.load.image('playerBullet', 'assets/playerBullet.png');
     this.load.image('enemyBullet', 'assets/enemyBullet.png');
     this.load.image('missile1', 'assets/missile.png');
@@ -57,6 +59,7 @@ class MenuScene extends Phaser.Scene{
     this.load.image('gunUpgrade', 'assets/gunUpgrade.png');
   }
   create(){
+    level = 0;
     //add background
     this.tileSprite = this.add.tileSprite(0,0,1200,600,'sky').setOrigin(0);
     this.add.image(600,300,'logo');
@@ -112,8 +115,7 @@ class MenuScene extends Phaser.Scene{
     score = 0;
     //start game scene when "S" is pressed
     this.input.keyboard.on('keyup_S', function(){
-      level = 1;
-      this.scene.start("Level1");
+      this.scene.start("Level3");
       this.scene.stop("MenuScene");
     }, this);
 

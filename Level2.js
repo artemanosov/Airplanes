@@ -5,7 +5,7 @@ class Level2 extends Phaser.Scene{
 
   create(){
     thisGame = this;
-
+    level = 2;
     //add background
     this.tileSprite = this.add.tileSprite(0,0,1200,600,'sky').setOrigin(0);
 
@@ -296,6 +296,24 @@ class Level2 extends Phaser.Scene{
 
       this.bullets.children.iterate(function(child){
         if(child.x<0 || child.x>1200 || child.y<0 || child.y>600){
+          toRemove.push(child);
+        }
+      });
+
+      this.gunUpgrades.children.iterate(function(child){
+        if(child.x<0){
+          toRemove.push(child);
+        }
+      });
+
+      this.healthPoints.children.iterate(function(child){
+        if(child.x<0){
+          toRemove.push(child);
+        }
+      });
+
+      this.shields.children.iterate(function(child){
+        if(child.x<0){
           toRemove.push(child);
         }
       });

@@ -22,8 +22,9 @@ function hitEnemy(bullet, enemy){
   bullet.disableBody(true,true);
   createSparkles(this,bullet.x,bullet.y);
   this.bullets.remove(bullet);
-  console.log(this);
-  this.player.points += enemy.points;
+  if(enemy.hp<=0){
+    this.player.points += enemy.points;
+  }
 }
 
 function getCollectible(player,collectible){

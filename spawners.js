@@ -63,6 +63,20 @@ function sendBomber2(game) {
   bomber2.points = 20;
 }
 
+function sendStriker() {
+  var x = 1200;
+  var y = Phaser.Math.Between(35, 400);
+  var striker = this.strikers.create(x,y,'striker').setOrigin(0);
+  striker.name = 'striker';
+  striker.damage = 20;
+  striker.hp = 100;
+  striker.points = 25;
+  striker.lastFired = 0;
+  striker.direction = 'down';
+  striker.ang = 180;
+  this.physics.velocityFromAngle(striker.ang, 350, striker.body.velocity);
+}
+
 function createHP(){
   var x = 1200;
   var y = Phaser.Math.Between(0, 550);

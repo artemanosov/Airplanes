@@ -1,16 +1,14 @@
-class Level1 extends Phaser.Scene{
+class Level3 extends Phaser.Scene{
   constructor(){
-    super({key:"Level1"})
+    super({key:"Level3"})
   }
-
   create(){
     thisGame = this;
-    level = 1;
+    level = 3;
     //add background
     this.tileSprite = this.add.tileSprite(0,0,1200,600,'sky').setOrigin(0);
 
     //  Set the camera bounds to be the size of the image
-    //this.cameras.main.setBounds(0, 0, 1200, 600);
     this.physics.world.setBounds(0, 0, 1200, 600);
 
     //create stats texts
@@ -31,29 +29,26 @@ class Level1 extends Phaser.Scene{
     thisGame.player.setMaxVelocity(300);
     thisGame.player.anims.play('player', true);
 
-
-
     //CREATE BULLETS
     this.bullets = this.physics.add.group();
-    //CREATE ENEMIES:
-    //1. Corn Duster
-    //2. Interceptor
-    //3. Bomber 1
 
     //Create Corn Dusters
     this.corndusters = this.physics.add.group();
     this.physics.add.overlap(thisGame.player, this.corndusters, enemyCollide, null, this);
 
-    //Create Interceptors
-    this.interceptors = this.physics.add.group();
-    this.physics.add.overlap(thisGame.player, this.interceptors, enemyCollide, null, this);
+    //Create Strikers
+    this.strikers = this.physics.add.group();
+    this.physics.add.overlap(thisGame.player, this.strikers, enemyCollide, null, this);
 
-    //Create Bombers 1
-    this.bombers1 = this.physics.add.group();
-    this.physics.add.overlap(thisGame.player, this.bombers1, enemyCollide, null, this);
+    //Create Destroyers
+    this.destroyers = this.physics.add.group();
+    this.physics.add.overlap(thisGame.player, this.destroyers, enemyCollide, null, this);
 
+    //Create Bombers 2
+    this.bombers2 = this.physics.add.group();
+    this.physics.add.overlap(thisGame.player, this.bombers2, enemyCollide, null, this);
 
-
+    this.time.addEvent({ delay: 1000, callback: sendDestroyer, callbackScope: this, loop: false });
 
     //ADD COLLECTIBLES
     //1. First Aid Kit
@@ -85,28 +80,6 @@ class Level1 extends Phaser.Scene{
       maxSize: 40
     });
 
-    //set spawns of collectibles
-    this.time.addEvent({ delay: 50000, callback: createHP, callbackScope: this, loop: true });
-    this.time.addEvent({ delay: 35000, callback: createShield, callbackScope: this, loop: true });
-    this.time.addEvent({ delay: 25000, callback: createGunUpgrade, callbackScope: this, loop: true });
-
-    //CONSTRUCT THE LEVEL (spawn enemies at certain times)
-    this.time.addEvent({ delay: 3000, callback: sendCornduster, callbackScope: this, loop: true });
-
-    this.time.delayedCall(20000,function(){
-      interTimer = this.time.addEvent({ delay: 2000, callback: sendInterceptor, callbackScope: this, loop: true });
-    },[],this);
-
-    this.time.delayedCall(40000,function(){
-      interTimer.remove(false);
-      interTimer = this.time.addEvent({ delay: 1000, callback: sendInterceptor, callbackScope: this, loop: true });
-      bomber1Timer = this.time.addEvent({ delay: 30000, callback: function(){
-        sendBomber1(thisGame);
-        this.time.delayedCall(3000, sendBomber1,[thisGame], this);
-        this.time.delayedCall(6000, sendBomber1,[thisGame], this);
-        this.time.delayedCall(9000, sendBomber1, [thisGame], this);
-      }, callbackScope: this, loop: true });
-    },[],this)
     //add cursor keys
     cursors = this.input.keyboard.createCursorKeys();
 
@@ -160,19 +133,8 @@ class Level1 extends Phaser.Scene{
          }
       }
 
-
-      //make player fire bullets
-      if((this.time.now-thisGame.player.lastFired)>thisGame.player.fireDelay){
-        //debugger
-        fire(this,thisGame.player.x+30, thisGame.player.y, thisGame.player.angle, 600, 'playerBullet');
-        thisGame.player.lastFired = this.time.now;
-      }
-
-      //create an array of enemies that are outside the world and must be removed
-      var toRemove = new Array();
-
       //check if enemy of each type has negative x (enemy left the battlefield)
-      //also, fire if needed and play death animation if hp<=0
+      //also, fire if needed
       this.corndusters.children.iterate(function(child){
         if(child.x < -20 || child.hp<=0){
           toRemove.push(child);
@@ -203,10 +165,19 @@ class Level1 extends Phaser.Scene{
 
       });
 
-      this.interceptors.children.iterate(function(child){
+      //make player fire bullets
+      if((this.time.now-thisGame.player.lastFired)>thisGame.player.fireDelay){
+        fire(this,thisGame.player.x+30, thisGame.player.y, thisGame.player.angle, 600, 'playerBullet');
+        thisGame.player.lastFired = this.time.now;
+      }
+
+      //create an array of enemies that are outside the world and must be removed
+      var toRemove = new Array();
+
+      this.destroyers.children.iterate(function(child){
         if(child.x < -20 || child.hp<=0){
           toRemove.push(child);
-        }else if((thisGame.time.now - child.lastFired)>2000){
+        }else if((thisGame.time.now - child.lastFired)>1000){
           fire(thisGame,child.x, child.y+30, 180, 450, 'enemyBullet');
           child.lastFired = thisGame.time.now;
         }
@@ -216,11 +187,12 @@ class Level1 extends Phaser.Scene{
         }
       });
 
-      this.bombers1.children.iterate(function(child){
+      this.bombers2.children.iterate(function(child){
         if(child.y < -20 || child.hp<=0){
           toRemove.push(child);
-        }else if((thisGame.time.now - child.lastFired)>1000){
-          fire(thisGame,child.x, child.y+30, 180, 450, 'missile1');
+        }else if((thisGame.time.now - child.lastFired)>2000){
+          var angle = Phaser.Math.Angle.Between(child.x,child.y+30,thisGame.player.x,thisGame.player.y);
+          fire(thisGame,child.x, child.y+30, angle , 450, 'missile2');
           child.lastFired = thisGame.time.now;
         }
         if(child.hp<=0){
@@ -229,28 +201,50 @@ class Level1 extends Phaser.Scene{
         }
       });
 
+      this.strikers.children.iterate(function(child){
+        if(child.x < -20 || child.hp<=0){
+          toRemove.push(child);
+        }else{
+          //striker changes its angle depending on the way it goes (up or down) until some limit(234 and 134 degrees)
+          //it changes the way it moves on the Y-axis when it hits upper or lower edge of the battlefield
+          var angle = child.ang;
+          if(child.direction == 'down'){
+            if(angle > 134){
+              angle -= 3;
+            }
+            if(child.y>485){
+              //if strike hits the lower edge of the battlefield change its direction so it goes up
+              child.direction = 'up';
+            }
+          }else{
+            if(angle < 224){
+              angle += 3;
+            }
+            if(child.y<10){
+              //if strike hits the upper edge of the battlefield change his direction so it goes down
+              child.direction = 'down';
+            }
+          }
+          //make striker move according to the angle of rotation
+          thisGame.physics.velocityFromAngle(angle, 120, child.body.velocity);
+          child.ang = angle;
+
+          //fire needed
+          if((thisGame.time.now - child.lastFired)>800){
+            fire(thisGame,child.x, child.y+90, 180, 450, 'missile1');
+            fire(thisGame,child.x, child.y+10, 180, 450, 'missile1');
+            child.lastFired = thisGame.time.now;
+          }
+        }
+        if(child.hp<=0){
+          //play death animation
+          explode(thisGame,child.x,child.y);
+        }
+      });
 
       //remove bullet when it is out of game world bounds
       this.bullets.children.iterate(function(child){
         if(child.x<0 || child.x>1200 || child.y<0 || child.y>600){
-          toRemove.push(child);
-        }
-      });
-
-      this.gunUpgrades.children.iterate(function(child){
-        if(child.x<0){
-          toRemove.push(child);
-        }
-      });
-
-      this.healthPoints.children.iterate(function(child){
-        if(child.x<0){
-          toRemove.push(child);
-        }
-      });
-
-      this.shields.children.iterate(function(child){
-        if(child.x<0){
           toRemove.push(child);
         }
       });
@@ -274,8 +268,9 @@ class Level1 extends Phaser.Scene{
         this.add.text(400,300,'GAME OVER',{fontSize: '50px', fill: '#000' });
         //start game scene when "S" is pressed
         this.time.delayedCall(10000, function(){
+          level = 0;
           this.scene.start("MenuScene");
-          this.scene.stop("Level1");
+          this.scene.stop("Level3");
         },[], this);
         gameOver = true;
         score = thisGame.player.points;
@@ -283,8 +278,9 @@ class Level1 extends Phaser.Scene{
     }
 
     if(distance==0){
-      this.scene.start("Level2");
-      this.scene.stop("Level1");
+      level = 3;
+      this.scene.start("Level3");
+      this.scene.stop("ManuScene");
     }
   }
 }
