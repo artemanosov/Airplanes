@@ -3,13 +3,7 @@ var cursors;
 //game objects
 var player;
 var newPlayer;
-var corndusters;
-var interceptors;
-var destroyers;
-var bombers1;
-var bombers2;
-var strikers;
-var bullets;
+
 //game stats
 var gameOver;
 var distanceText;
@@ -21,6 +15,8 @@ var score
 var healthPoints;
 var shields;
 var gunUpgrades;
+var clocks;
+var slowdown;
 //effects
 var explosions;
 var sparkles;
@@ -57,6 +53,8 @@ class MenuScene extends Phaser.Scene{
     this.load.image('health', 'assets/health.png');
     this.load.image('shield', 'assets/shield.png');
     this.load.image('gunUpgrade', 'assets/gunUpgrade.png');
+    this.load.image('clock', 'assets/clock.png');
+    this.load.image('particle', 'assets/particle.png');
   }
   create(){
     level = 0;

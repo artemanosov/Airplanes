@@ -48,12 +48,13 @@ class Level3 extends Phaser.Scene{
     this.bombers2 = this.physics.add.group();
     this.physics.add.overlap(thisGame.player, this.bombers2, enemyCollide, null, this);
 
-    this.time.addEvent({ delay: 1000, callback: sendDestroyer, callbackScope: this, loop: false });
+
 
     //ADD COLLECTIBLES
     //1. First Aid Kit
     //2. Shield
     //3. Gun upgrade
+    //4. Time slowdown
 
     //Create First Aid Kit
     this.healthPoints = this.physics.add.group();
@@ -66,6 +67,16 @@ class Level3 extends Phaser.Scene{
     //Create Gun Upgrade
     this.gunUpgrades = this.physics.add.group();
     this.physics.add.overlap(thisGame.player, this.gunUpgrades, getCollectible, null, this);
+
+    //Create Time Slowdown
+    this.clocks = this.physics.add.group();
+    this.physics.add.overlap(thisGame.player, this.clocks, getCollectible, null, this);
+    slowdown = false;
+    this.time.addEvent({delay: 1000, callback: createClock, callbackScope: this, loop: false });
+
+    //Create particles
+    this.particles = this.physics.add.group();
+    this.physics.add.overlap(thisGame.player, this.particles, particleCollision, null, this);
 
     //CREATE EFFECTS
     //create Explosions
@@ -86,168 +97,28 @@ class Level3 extends Phaser.Scene{
     //level data
     distance = 200;
     this.time.addEvent({delay: 1000, callback: function(){distance-=1}, callbackScope: this, loop: true });
+    this.time.addEvent({ delay: 1000, callback: sendDestroyer, callbackScope: this, loop: true });
   }
 
   update(){
     if(thisGame.player.hp>0){
-      //player moves
-       if (cursors.left.isDown)
-      {
-          thisGame.player.setVelocityX(-200);
-      }
-      else if (cursors.right.isDown)
-      {
-          thisGame.player.setVelocityX(200);
-      }
-      else
-      {
-          thisGame.player.setVelocityX(0);
-
-      }
-
-      if (cursors.up.isDown)
-      {
-          thisGame.player.setVelocityY(-300);
-          if(thisGame.player.rotation >= -0.5){
-            thisGame.player.rotation -= 0.1;
-          }
-      }
-      else if(cursors.down.isDown){
-         thisGame.player.setVelocityY(300)
-         if(thisGame.player.rotation <= 0.5){
-           thisGame.player.rotation += 0.1;
-         }
-      }
-      else{
-         thisGame.player.setVelocityY(0);
-         if(thisGame.player.rotation > 0){
-           thisGame.player.rotation -= 0.1;
-           if(thisGame.player.rotation < 0){
-             thisGame.player.rotation = 0;
-           }
-         }else if(thisGame.player.rotation < 0){
-           thisGame.player.rotation +=0.1;
-           if(thisGame.player.rotation > 0){
-             thisGame.player.rotation = 0;
-           }
-         }
-      }
-
-      //check if enemy of each type has negative x (enemy left the battlefield)
-      //also, fire if needed
-      this.corndusters.children.iterate(function(child){
-        if(child.x < -20 || child.hp<=0){
-          toRemove.push(child);
-        }else{
-          var angle = child.ang;
-          if(child.direction == 'down'){
-            if(angle <= 134){
-              child.direction = 'up';
-            }
-            angle -= 1;
-
-            thisGame.physics.velocityFromAngle(angle, 200, child.body.velocity);
-          }else{
-            if(angle >= 224){
-              child.direction = 'down';
-            }
-            angle += 1;
-            thisGame.physics.velocityFromAngle(angle, 200, child.body.velocity);
-          }
-          child.ang = angle;
-
-
-        }
-        if(child.hp<=0){
-          //play death animation
-          explode(thisGame,child.x,child.y);
-        }
-
-      });
-
-      //make player fire bullets
-      if((this.time.now-thisGame.player.lastFired)>thisGame.player.fireDelay){
-        fire(this,thisGame.player.x+30, thisGame.player.y, thisGame.player.angle, 600, 'playerBullet');
-        thisGame.player.lastFired = this.time.now;
-      }
-
+      updatePlayer(thisGame);
       //create an array of enemies that are outside the world and must be removed
       var toRemove = new Array();
 
-      this.destroyers.children.iterate(function(child){
-        if(child.x < -20 || child.hp<=0){
-          toRemove.push(child);
-        }else if((thisGame.time.now - child.lastFired)>1000){
-          fire(thisGame,child.x, child.y+30, 180, 450, 'enemyBullet');
-          child.lastFired = thisGame.time.now;
-        }
-        if(child.hp<=0){
-          //play death animation
-          explode(thisGame,child.x,child.y);
-        }
-      });
+      //check if enemy of each type has negative x (enemy left the battlefield)
+      //also, fire if needed
+      updateCorndusters(thisGame,toRemove);
+      updateDestroyers(thisGame,toRemove);
+      updateBombers2(thisGame,toRemove);
+      updateStrikers(thisGame,toRemove);
+      updateBullets(thisGame,toRemove);
+      updateParticles(thisGame,toRemove);
 
-      this.bombers2.children.iterate(function(child){
-        if(child.y < -20 || child.hp<=0){
-          toRemove.push(child);
-        }else if((thisGame.time.now - child.lastFired)>2000){
-          var angle = Phaser.Math.Angle.Between(child.x,child.y+30,thisGame.player.x,thisGame.player.y);
-          fire(thisGame,child.x, child.y+30, angle , 450, 'missile2');
-          child.lastFired = thisGame.time.now;
-        }
-        if(child.hp<=0){
-          //play death animation
-          explode(thisGame,child.x,child.y);
-        }
-      });
+      console.log(this.particles.getLength())
 
-      this.strikers.children.iterate(function(child){
-        if(child.x < -20 || child.hp<=0){
-          toRemove.push(child);
-        }else{
-          //striker changes its angle depending on the way it goes (up or down) until some limit(234 and 134 degrees)
-          //it changes the way it moves on the Y-axis when it hits upper or lower edge of the battlefield
-          var angle = child.ang;
-          if(child.direction == 'down'){
-            if(angle > 134){
-              angle -= 3;
-            }
-            if(child.y>485){
-              //if strike hits the lower edge of the battlefield change its direction so it goes up
-              child.direction = 'up';
-            }
-          }else{
-            if(angle < 224){
-              angle += 3;
-            }
-            if(child.y<10){
-              //if strike hits the upper edge of the battlefield change his direction so it goes down
-              child.direction = 'down';
-            }
-          }
-          //make striker move according to the angle of rotation
-          thisGame.physics.velocityFromAngle(angle, 120, child.body.velocity);
-          child.ang = angle;
-
-          //fire needed
-          if((thisGame.time.now - child.lastFired)>800){
-            fire(thisGame,child.x, child.y+90, 180, 450, 'missile1');
-            fire(thisGame,child.x, child.y+10, 180, 450, 'missile1');
-            child.lastFired = thisGame.time.now;
-          }
-        }
-        if(child.hp<=0){
-          //play death animation
-          explode(thisGame,child.x,child.y);
-        }
-      });
-
-      //remove bullet when it is out of game world bounds
-      this.bullets.children.iterate(function(child){
-        if(child.x<0 || child.x>1200 || child.y<0 || child.y>600){
-          toRemove.push(child);
-        }
-      });
+      //update collectibles
+      //!!!!!!! insert updatesm!!!!
 
       while(toRemove.length>0){
         var e = toRemove.pop();

@@ -100,3 +100,32 @@ function createGunUpgrade(){
   gunUpgrade.setVelocityX(-100);
   gunUpgrade.name = 'gunUpgrade';
 }
+
+function createClock(){
+  var x = 1200;
+  var y = Phaser.Math.Between(0, 550);
+  var clock = this.clocks.create(x,y,'clock').setOrigin(0);
+  clock.setVelocityX(-100);
+  clock.name = 'slowdown';
+}
+
+function spawnParticles(thisGame,x,y){
+  //create 16 particles for 16 directions. Direction will depend on Angle
+  //Angle starts from 0 and is increases by 22.5 for each particle
+  var particle;
+  var angle = 0;
+  //make sure only 16 particles will be spawned
+  while(angle!=360){
+    //create particle
+    particle = thisGame.particles.create(x,y,'particle').setOrigin(0);
+    //sets its velocity depending on angle
+    thisGame.physics.velocityFromAngle(angle, 150, particle.body.velocity);
+    //save current velocities for a case of slowdown velocities recovery
+    particle.velX = particle.body.velocity.x;
+    particle.velY = particle.body.velocity.y;
+    particle.modified = false;
+    particle.name = 'particle';
+    //increase an angle for the next particle
+    angle+=22.5;
+  }
+}

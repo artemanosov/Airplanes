@@ -2,7 +2,6 @@ function enemyCollide(player, enemy){
   if(!player.shield){
     this.player.hp -= enemy.damage;
   }
-
   explode(this,enemy.x,enemy.y);
   removeObject(this,enemy);
 }
@@ -23,6 +22,7 @@ function hitEnemy(bullet, enemy){
   createSparkles(this,bullet.x,bullet.y);
   this.bullets.remove(bullet);
   if(enemy.hp<=0){
+    spawnParticles(this,enemy.x,enemy.y);
     this.player.points += enemy.points;
   }
 }
@@ -39,7 +39,12 @@ function getCollectible(player,collectible){
     player.fireDelay = 100;
     this.gunUpgrades.remove(collectible);
     this.time.delayedCall(10000, restoreFireRate, [this.player], this);
-  }else{
+  }else if(collectible.name == 'slowdown'){
+    //slowdown all objects except player for 10 seconds
+    slowdown = true;
+    this.time.delayedCall(7000, function(){slowdown=false;}, [this.player], this);
+  }
+  else{
     //it is Shield
     player.shield = true;
     this.shields.remove(collectible);
@@ -53,4 +58,12 @@ function restoreFireRate(player){player.fireDelay = 200;}
 function shieldOff(player){
   player.shield = false;
   player.clearTint();
+}
+
+function particleCollision(player, particle){
+  particle.disableBody(true,true);
+  createSparkles(this,particle.x,particle.y);
+  particle.disableBody(true,true);
+  player.hp-=5;
+  this.particles.remove(particle);
 }

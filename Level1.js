@@ -118,142 +118,21 @@ class Level1 extends Phaser.Scene{
   update(){
     if(thisGame.player.hp>0){
       //player moves
-       if (cursors.left.isDown)
-      {
-          thisGame.player.setVelocityX(-200);
-      }
-      else if (cursors.right.isDown)
-      {
-          thisGame.player.setVelocityX(200);
-      }
-      else
-      {
-          thisGame.player.setVelocityX(0);
-
-      }
-
-      if (cursors.up.isDown)
-      {
-          thisGame.player.setVelocityY(-300);
-          if(thisGame.player.rotation >= -0.5){
-            thisGame.player.rotation -= 0.1;
-          }
-      }
-      else if(cursors.down.isDown){
-         thisGame.player.setVelocityY(300)
-         if(thisGame.player.rotation <= 0.5){
-           thisGame.player.rotation += 0.1;
-         }
-      }
-      else{
-         thisGame.player.setVelocityY(0);
-         if(thisGame.player.rotation > 0){
-           thisGame.player.rotation -= 0.1;
-           if(thisGame.player.rotation < 0){
-             thisGame.player.rotation = 0;
-           }
-         }else if(thisGame.player.rotation < 0){
-           thisGame.player.rotation +=0.1;
-           if(thisGame.player.rotation > 0){
-             thisGame.player.rotation = 0;
-           }
-         }
-      }
-
-
-      //make player fire bullets
-      if((this.time.now-thisGame.player.lastFired)>thisGame.player.fireDelay){
-        //debugger
-        fire(this,thisGame.player.x+30, thisGame.player.y, thisGame.player.angle, 600, 'playerBullet');
-        thisGame.player.lastFired = this.time.now;
-      }
+       updatePlayer(thisGame);
 
       //create an array of enemies that are outside the world and must be removed
       var toRemove = new Array();
-
       //check if enemy of each type has negative x (enemy left the battlefield)
       //also, fire if needed and play death animation if hp<=0
-      this.corndusters.children.iterate(function(child){
-        if(child.x < -20 || child.hp<=0){
-          toRemove.push(child);
-        }else{
-          var angle = child.ang;
-          if(child.direction == 'down'){
-            if(angle <= 134){
-              child.direction = 'up';
-            }
-            angle -= 1;
+      updateCorndusters(thisGame,toRemove);
+      updateInterceptors(thisGame,toRemove);
+      updateBombers1(thisGame,toRemove);
+      updateBullets(thisGame,toRemove);
 
-            thisGame.physics.velocityFromAngle(angle, 200, child.body.velocity);
-          }else{
-            if(angle >= 224){
-              child.direction = 'down';
-            }
-            angle += 1;
-            thisGame.physics.velocityFromAngle(angle, 200, child.body.velocity);
-          }
-          child.ang = angle;
-
-
-        }
-        if(child.hp<=0){
-          //play death animation
-          explode(thisGame,child.x,child.y);
-        }
-
-      });
-
-      this.interceptors.children.iterate(function(child){
-        if(child.x < -20 || child.hp<=0){
-          toRemove.push(child);
-        }else if((thisGame.time.now - child.lastFired)>2000){
-          fire(thisGame,child.x, child.y+30, 180, 450, 'enemyBullet');
-          child.lastFired = thisGame.time.now;
-        }
-        if(child.hp<=0){
-          //play death animation
-          explode(thisGame,child.x,child.y);
-        }
-      });
-
-      this.bombers1.children.iterate(function(child){
-        if(child.y < -20 || child.hp<=0){
-          toRemove.push(child);
-        }else if((thisGame.time.now - child.lastFired)>1000){
-          fire(thisGame,child.x, child.y+30, 180, 450, 'missile1');
-          child.lastFired = thisGame.time.now;
-        }
-        if(child.hp<=0){
-          //play death animation
-          explode(thisGame,child.x,child.y);
-        }
-      });
-
-
-      //remove bullet when it is out of game world bounds
-      this.bullets.children.iterate(function(child){
-        if(child.x<0 || child.x>1200 || child.y<0 || child.y>600){
-          toRemove.push(child);
-        }
-      });
-
-      this.gunUpgrades.children.iterate(function(child){
-        if(child.x<0){
-          toRemove.push(child);
-        }
-      });
-
-      this.healthPoints.children.iterate(function(child){
-        if(child.x<0){
-          toRemove.push(child);
-        }
-      });
-
-      this.shields.children.iterate(function(child){
-        if(child.x<0){
-          toRemove.push(child);
-        }
-      });
+      //update collectibles
+      updateGunUpgrades(thisGame,toRemove);
+      updateHealthPoints(thisGame,toRemove);
+      updateShields(thisGame,toRemove);
 
       while(toRemove.length>0){
         var e = toRemove.pop();

@@ -1,7 +1,6 @@
 function fire(game,x, y, angle, velocity, type){
   var bullet = game.bullets.create(x,y,type).setOrigin(0);
   if(type == 'missile2'){
-
     bullet.damage = 30;
     game.physics.velocityFromRotation(angle, velocity, bullet.body.velocity);
     bullet.rotation = angle;
@@ -9,12 +8,14 @@ function fire(game,x, y, angle, velocity, type){
     bullet.damage = 10;
     game.physics.velocityFromAngle(angle, velocity, bullet.body.velocity);
   }
+  //save bullet original x and y velocities
+  bullet.velX = bullet.body.velocity.x;
+  bullet.velY = bullet.body.velocity.y;
 
   bullet.name = type;
-
+  bullet.modified = false;
 
   if(type=='playerBullet'){
-
     game.physics.add.overlap(game.corndusters, bullet, hitEnemy, null, game);
 
     if(level == 1){
@@ -61,6 +62,9 @@ function removeObject(game,object){
   }
   else if(object.name == 'striker'){
     game.strikers.remove(object);
+  }
+  else if(object.name == 'particle'){
+    game.particles.remove(object);
   }
   else{
     //it is a bullet
