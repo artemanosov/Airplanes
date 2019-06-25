@@ -9,14 +9,14 @@ function sendCornduster() {
   cornduster.points = 5;
   cornduster.direction = 'down';
   cornduster.ang = 180;
-  this.physics.velocityFromAngle(cornduster.ang, 50, cornduster.body.velocity);
+  //this.physics.velocityFromAngle(cornduster.ang, 50, cornduster.body.velocity);
 }
 
 function sendInterceptor() {
   var x = 1200;
   var y = Phaser.Math.Between(0, 530);
   var interceptor = this.interceptors.create(x,y,'interceptor').setOrigin(0);
-  interceptor.setVelocityX(-350);
+  //interceptor.setVelocityX(-350);
   interceptor.anims.play('interceptor', true);
   interceptor.name = 'interceptor';
   interceptor.damage = 20;
@@ -29,7 +29,7 @@ function sendDestroyer() {
   var x = 1200;
   var y = Phaser.Math.Between(0, 520);
   var destroyer = this.destroyers.create(x,y,'destroyer').setOrigin(0);
-  destroyer.setVelocityX(-300);
+  //destroyer.setVelocityX(-300);
   destroyer.anims.play('destroyer', true);
   destroyer.name = 'destroyer';
   destroyer.damage = 25;
@@ -43,7 +43,7 @@ function sendBomber1(game) {
   var x = 1000;
   var y = 630;
   var bomber1 = game.bombers1.create(x,y,'bomber1').setOrigin(0);
-  bomber1.setVelocityY(-50);
+  //bomber1.setVelocityY(-50);
   bomber1.name = 'bomber1';
   bomber1.damage = 25;
   bomber1.hp = 70;
@@ -55,7 +55,7 @@ function sendBomber2(game) {
   var x = 1000;
   var y = 630;
   var bomber2 = game.bombers2.create(x,y,'bomber2').setOrigin(0);
-  bomber2.setVelocityY(-50);
+  //bomber2.setVelocityY(-50);
   bomber2.name = 'bomber2';
   bomber2.damage = 25;
   bomber2.hp = 70;
@@ -74,14 +74,14 @@ function sendStriker() {
   striker.lastFired = 0;
   striker.direction = 'down';
   striker.ang = 180;
-  this.physics.velocityFromAngle(striker.ang, 350, striker.body.velocity);
+  //this.physics.velocityFromAngle(striker.ang, 350, striker.body.velocity);
 }
 
 function createHP(){
   var x = 1200;
   var y = Phaser.Math.Between(0, 550);
   var healthPoint = this.healthPoints.create(x,y,'health').setOrigin(0);
-  healthPoint.setVelocityX(-100);
+  //healthPoint.setVelocityX(-100);
   healthPoint.name = 'healthPoint';
 }
 
@@ -89,7 +89,7 @@ function createShield() {
   var x = 1200;
   var y = Phaser.Math.Between(0, 550);
   var shield = this.shields.create(x,y,'shield').setOrigin(0);
-  shield.setVelocityX(-100);
+  //shield.setVelocityX(-100);
   shield.name = 'shield';
 }
 
@@ -97,15 +97,23 @@ function createGunUpgrade(){
   var x = 1200;
   var y = Phaser.Math.Between(0, 550);
   var gunUpgrade = this.gunUpgrades.create(x,y,'gunUpgrade').setOrigin(0);
-  gunUpgrade.setVelocityX(-100);
+  //gunUpgrade.setVelocityX(-100);
   gunUpgrade.name = 'gunUpgrade';
+}
+
+function createFireRate(){
+  var x = 1200;
+  var y = Phaser.Math.Between(0, 550);
+  var fireRate = this.fireRates.create(x,y,'fireRate').setOrigin(0);
+  //fireRate.setVelocityX(-100);
+  fireRate.name = 'fireRate';
 }
 
 function createClock(){
   var x = 1200;
   var y = Phaser.Math.Between(0, 550);
   var clock = this.clocks.create(x,y,'clock').setOrigin(0);
-  clock.setVelocityX(-100);
+  //clock.setVelocityX(-100);
   clock.name = 'slowdown';
 }
 

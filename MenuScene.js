@@ -3,7 +3,6 @@ var cursors;
 //game objects
 var player;
 var newPlayer;
-
 //game stats
 var gameOver;
 var distanceText;
@@ -24,6 +23,8 @@ var sparkles;
 var level;
 var levelText;
 var timeStarted;
+var paused;
+var pauseText;
 //timers for enemies
 var interTimer;
 var destrTimer;
@@ -43,6 +44,8 @@ class MenuScene extends Phaser.Scene{
     this.load.spritesheet('destroyer', 'assets/destroyer.png', {frameWidth: 47, frameHeight: 80});
     this.load.spritesheet('kaboom', 'assets/explosion.png', {frameWidth: 64, frameHeight: 64});
     this.load.spritesheet('bulletHit', 'assets/sparkles.png', {frameWidth: 32, frameHeight: 32});
+    this.load.spritesheet('lazer', 'assets/laser.png', {frameWidth: 16, frameHeight: 4});
+    this.load.spritesheet('boss', 'assets/bossSprite.png', {frameWidth: 120, frameHeight: 232});
     this.load.image('bomber1', 'assets/bomber1.png');
     this.load.image('bomber2', 'assets/bomber2.png');
     this.load.image('striker', 'assets/striker.png');
@@ -52,6 +55,7 @@ class MenuScene extends Phaser.Scene{
     this.load.image('missile2', 'assets/missile2.png');
     this.load.image('health', 'assets/health.png');
     this.load.image('shield', 'assets/shield.png');
+    this.load.image('fireRate', 'assets/fireRate.png');
     this.load.image('gunUpgrade', 'assets/gunUpgrade.png');
     this.load.image('clock', 'assets/clock.png');
     this.load.image('particle', 'assets/particle.png');
@@ -109,11 +113,25 @@ class MenuScene extends Phaser.Scene{
       hideOnComplete: true
     });
 
+    this.anims.create({
+      key: 'lazer',
+      frames: this.anims.generateFrameNumbers('lazer', { start: 0, end: 32 }),
+      frameRate: 50,
+      repeat: 0,
+    });
+
+    this.anims.create({
+      key: 'boss',
+      frames: this.anims.generateFrameNumbers('boss', { start: 0, end: 2 }),
+      frameRate: 20,
+      repeat: -1,
+    });
+
     gameOver = false;
     score = 0;
     //start game scene when "S" is pressed
     this.input.keyboard.on('keyup_S', function(){
-      this.scene.start("Level3");
+      this.scene.start("Level4");
       this.scene.stop("MenuScene");
     }, this);
 

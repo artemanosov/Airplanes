@@ -1,10 +1,10 @@
-class Level3 extends Phaser.Scene{
+class Level4 extends Phaser.Scene{
   constructor(){
-    super({key:"Level3"})
+    super({key:"Level4"})
   }
   create(){
     thisGame = this;
-    level = 3;
+    level = 4;
     //add background
     this.tileSprite = this.add.tileSprite(0,0,1200,600,'sky').setOrigin(0);
 
@@ -12,10 +12,11 @@ class Level3 extends Phaser.Scene{
     this.physics.world.setBounds(0, 0, 1200, 600);
 
     //create stats texts
-    distanceText = this.add.text(1000,5,'distance: 0',{fontSize: '20px', fill: '#000' });
+    distanceText = this.add.text(1000,5,'Boss HP: 0',{fontSize: '20px', fill: '#000' });
     scoreText = this.add.text(5,5,'score: 0',{fontSize: '20px', fill: '#000' });
     healthText = this.add.text(550,5,'HP: 0',{fontSize: '20px', fill: '#000' });
     levelText = this.add.text(5,580,'Level: 1',{fontSize: '20px', fill: '#000' });
+    pauseText = this.add.text(400,300,'PAUSED',{fontSize: '50px', fill: '#000' });
 
     //add game elements
     thisGame.player = this.physics.add.sprite(400,400,'player');
@@ -23,33 +24,26 @@ class Level3 extends Phaser.Scene{
     thisGame.player.damage = 10;
     thisGame.player.points = 0;
     thisGame.player.lastFired = 0;
-    thisGame.player.fireDelay = 200;//200
+    thisGame.player.fireDelay = 200;
     thisGame.player.shield = false;
     thisGame.player.gunType = 'regular';
     thisGame.player.setCollideWorldBounds(true);
     thisGame.player.setMaxVelocity(300);
     thisGame.player.anims.play('player', true);
 
+    //Create Boss
+    thisGame.boss = this.physics.add.sprite(1250,200,'boss');
+    thisGame.boss.anims.play('boss', true);
+    thisGame.boss.hp = 1000;
+    thisGame.boss.damage = 100;
+    thisGame.boss.lastFired = 0;
+    thisGame.boss.fireDelay = 700;
+    thisGame.boss.setVelocityX(-30);
+    thisGame.boss.setVelocityY(-30);
+    thisGame.boss.direction = 'up';
+
     //CREATE BULLETS
     this.bullets = this.physics.add.group();
-
-    //Create Corn Dusters
-    this.corndusters = this.physics.add.group();
-    this.physics.add.overlap(thisGame.player, this.corndusters, enemyCollide, null, this);
-
-    //Create Strikers
-    this.strikers = this.physics.add.group();
-    this.physics.add.overlap(thisGame.player, this.strikers, enemyCollide, null, this);
-
-    //Create Destroyers
-    this.destroyers = this.physics.add.group();
-    this.physics.add.overlap(thisGame.player, this.destroyers, enemyCollide, null, this);
-
-    //Create Bombers 2
-    this.bombers2 = this.physics.add.group();
-    this.physics.add.overlap(thisGame.player, this.bombers2, enemyCollide, null, this);
-
-
 
     //ADD COLLECTIBLES
     //1. First Aid Kit
@@ -99,32 +93,20 @@ class Level3 extends Phaser.Scene{
     //add cursor keys
     cursors = this.input.keyboard.createCursorKeys();
 
-    //level data
-    distance = 200;
-    this.time.addEvent({delay: 1000, callback: function(){distance-=1}, callbackScope: this, loop: true });
-    this.time.addEvent({ delay: 1000, callback: sendStriker, callbackScope: this, loop: false });
-    this.time.addEvent({ delay: 1000, callback: createGunUpgrade, callbackScope: this, loop: false });
-
     paused = false;
     this.input.keyboard.on('keyup_P', function(){
       paused = !paused;
     }, this);
-  }
 
+  }
   update(){
     if(thisGame.player.hp>0){
       updatePlayer(thisGame);
+      updateBoss(thisGame);
       //create an array of enemies that are outside the world and must be removed
       var toRemove = new Array();
-
-      //check if enemy of each type has negative x (enemy left the battlefield)
-      //also, fire if needed
-      updateCorndusters(thisGame,toRemove);
-      updateDestroyers(thisGame,toRemove);
-      updateBombers2(thisGame,toRemove);
-      updateStrikers(thisGame,toRemove);
       updateBullets(thisGame,toRemove);
-      updateParticles(thisGame,toRemove);
+
 
       //console.log(this.bullets.getLength())
 
@@ -138,9 +120,14 @@ class Level3 extends Phaser.Scene{
 
       //background moves
       this.tileSprite.tilePositionX += 0.75;
-      distanceText.text = 'distance: '+distance;
+      distanceText.text = 'Boss HP: '+thisGame.boss.hp;
       scoreText.text = 'score: '+thisGame.player.points;
       healthText.text = 'HP: '+thisGame.player.hp;
+      if(paused){
+        pauseText.visible = true;
+      }else{
+        pauseText.visible = false;
+      }
 
     }else{
       //when game ends
@@ -157,12 +144,6 @@ class Level3 extends Phaser.Scene{
         gameOver = true;
         score = thisGame.player.points;
       }
-    }
-
-    if(distance==0){
-      level = 3;
-      this.scene.start("Level3");
-      this.scene.stop("ManuScene");
     }
   }
 }
