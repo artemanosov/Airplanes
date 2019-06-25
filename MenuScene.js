@@ -46,6 +46,7 @@ class MenuScene extends Phaser.Scene{
     this.load.spritesheet('bulletHit', 'assets/sparkles.png', {frameWidth: 32, frameHeight: 32});
     this.load.spritesheet('lazer', 'assets/laser.png', {frameWidth: 16, frameHeight: 4});
     this.load.spritesheet('boss', 'assets/bossSprite.png', {frameWidth: 120, frameHeight: 232});
+    this.load.spritesheet('boss2', 'assets/boss2.png', {frameWidth: 120, frameHeight: 232});
     this.load.image('bomber1', 'assets/bomber1.png');
     this.load.image('bomber2', 'assets/bomber2.png');
     this.load.image('striker', 'assets/striker.png');
@@ -127,11 +128,18 @@ class MenuScene extends Phaser.Scene{
       repeat: -1,
     });
 
+    this.anims.create({
+      key: 'boss2',
+      frames: this.anims.generateFrameNumbers('boss2', { start: 0, end: 2 }),
+      frameRate: 20,
+      repeat: -1,
+    });
+
     gameOver = false;
     score = 0;
     //start game scene when "S" is pressed
     this.input.keyboard.on('keyup_S', function(){
-      this.scene.start("Level4");
+      this.scene.start("Level1");
       this.scene.stop("MenuScene");
     }, this);
 

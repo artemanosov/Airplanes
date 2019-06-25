@@ -59,7 +59,7 @@ function updatePlayer(thisGame){
 
 }
 
-function updateBoss(thisGame){
+function updateBoss1(thisGame){
   if(!paused){
     //MOVEMENTS
     if(thisGame.boss.body.x <= 1080){
@@ -97,11 +97,28 @@ function updateBoss(thisGame){
 
     //ATTACK
     if((thisGame.time.now - thisGame.boss.lastFired)>thisGame.boss.fireDelay){
-      if(thisGame.boss.hp<500){
-        var angle = Phaser.Math.Angle.Between(thisGame.boss.x,thisGame.boss.y+30,thisGame.player.x,thisGame.player.y);
-        fire(thisGame,thisGame.boss.x, thisGame.boss.y+30, angle , 450, 'missile2');
+      //boss have different attack patterns depending on his health
+      if(thisGame.boss.hp<200){
+        fire(thisGame,thisGame.boss.x-50, thisGame.boss.y-70, 180 , 450, 'missile1');
+        fire(thisGame,thisGame.boss.x-50, thisGame.boss.y+70, 180 , 450, 'missile1');
+      }
+      else if(thisGame.boss.hp>5000){
+        if(thisGame.boss.fireAngle > 200){
+          thisGame.boss.fireDirection = 'down';
+        }else if(thisGame.boss.fireAngle < 160){
+          thisGame.boss.fireDirection = 'up';
+        }
+
+        if(thisGame.boss.fireDirection == 'down'){
+          thisGame.boss.fireAngle-=1;
+        }else{
+          thisGame.boss.fireAngle+=1;
+        }
+        fire(thisGame,thisGame.boss.x-50, thisGame.boss.y-70, thisGame.boss.fireAngle , 450, 'enemyBullet');
+        fire(thisGame,thisGame.boss.x-50, thisGame.boss.y+70, -thisGame.boss.fireAngle , 450, 'enemyBullet');
       }else{
-        fire(thisGame,thisGame.boss.x, thisGame.boss.y+30, 180 , 450, 'missile1');
+        fire(thisGame,thisGame.boss.x-50, thisGame.boss.y-70, 180 , 450, 'enemyBullet');
+        fire(thisGame,thisGame.boss.x-50, thisGame.boss.y+70, 180 , 450, 'enemyBullet');
       }
 
       thisGame.boss.lastFired = thisGame.time.now;
@@ -113,6 +130,70 @@ function updateBoss(thisGame){
     thisGame.boss.paused = true;
   }
 }
+
+function updateBoss2(thisGame){
+  if(!paused){
+    //MOVEMENTS
+    var velocity;
+    if(thisGame.boss.body.x <= 600){
+      //if boss hits the left edge of his movement box, change velocity X to
+      //move it to the opposite direction
+      velocity = Phaser.Math.Between(50, 100);
+      thisGame.boss.setVelocityX(velocity);
+    }else if(thisGame.boss.body.x >= 1080){
+      //if boss hits the right edge of his movement box, change velocity X to
+      //move it to the opposite direction
+      velocity = Phaser.Math.Between(50, 100);
+      thisGame.boss.setVelocityX(-velocity);
+    }
+
+    if(thisGame.boss.body.y >= 366){
+      //if boss hits the lower edge of his movement box, change velocity X to
+      //move it to the opposite direction
+      velocity = Phaser.Math.Between(50, 100);
+      thisGame.boss.setVelocityY(-velocity);
+    }else if(thisGame.boss.body.y <= 0){
+      //if boss hits the lower edge of his movement box, change velocity X to
+      //move it to the opposite direction
+      velocity = Phaser.Math.Between(50, 100);
+      thisGame.boss.setVelocityY(velocity);
+    }
+
+    //ATTACK
+    if((thisGame.time.now - thisGame.boss.lastFired)>thisGame.boss.fireDelay){
+      //boss have different attack patterns depending on his health
+      if(thisGame.boss.hp>500){
+        var angle = Phaser.Math.Angle.Between(thisGame.boss.x-50,thisGame.boss.y-70,thisGame.player.x,thisGame.player.y);
+        fire(thisGame,thisGame.boss.x-50, thisGame.boss.y-70, angle, 500, 'missile2');
+        angle = Phaser.Math.Angle.Between(thisGame.boss.x-50,thisGame.boss.y+70,thisGame.player.x,thisGame.player.y);
+        fire(thisGame,thisGame.boss.x-50, thisGame.boss.y+70, angle, 500, 'missile2');
+      }
+      else{
+        fire(thisGame,thisGame.boss.x-50, thisGame.boss.y-70, 180 , 450, 'missile1');
+        fire(thisGame,thisGame.boss.x-50, thisGame.boss.y+70, 180 , 450, 'missile1');
+      }
+
+      thisGame.boss.lastFired = thisGame.time.now;
+    }
+    //restore previous velocities if game was paused
+    if(thisGame.boss.paused==true){
+      thisGame.boss.body.velocity.x = thisGame.boss.prevVelX;
+      thisGame.boss.body.velocity.y = thisGame.boss.prevVelY;
+      thisGame.boss.paused = false;
+    }
+  }
+  else{
+    //if game was paused, save previous velocities of the bullet to restore them later
+    if(thisGame.boss.paused!=true){
+      thisGame.boss.prevVelX = thisGame.boss.body.velocity.x;
+      thisGame.boss.prevVelY = thisGame.boss.body.velocity.y;
+      thisGame.boss.paused = true;
+    }
+    thisGame.boss.setVelocityX(0);
+    thisGame.boss.setVelocityY(0);
+  }
+}
+
   function updateCorndusters(thisGame, toRemove){
     thisGame.corndusters.children.iterate(function(child){
       if(!paused){

@@ -32,15 +32,19 @@ class Level4 extends Phaser.Scene{
     thisGame.player.anims.play('player', true);
 
     //Create Boss
-    thisGame.boss = this.physics.add.sprite(1250,200,'boss');
-    thisGame.boss.anims.play('boss', true);
-    thisGame.boss.hp = 1000;
+    thisGame.boss = this.physics.add.sprite(1250,200,'boss2');
+    thisGame.boss.anims.play('boss2', true);
+    thisGame.boss.hp = 10000;
     thisGame.boss.damage = 100;
     thisGame.boss.lastFired = 0;
     thisGame.boss.fireDelay = 700;
     thisGame.boss.setVelocityX(-30);
     thisGame.boss.setVelocityY(-30);
+    //addons to boss1
     thisGame.boss.direction = 'up';
+    thisGame.boss.fireAngle = 180;
+    thisGame.boss.fireDirection = 'up';
+
 
     //CREATE BULLETS
     this.bullets = this.physics.add.group();
@@ -102,7 +106,7 @@ class Level4 extends Phaser.Scene{
   update(){
     if(thisGame.player.hp>0){
       updatePlayer(thisGame);
-      updateBoss(thisGame);
+      updateBoss2(thisGame);
       //create an array of enemies that are outside the world and must be removed
       var toRemove = new Array();
       updateBullets(thisGame,toRemove);
