@@ -22,6 +22,9 @@ function removeObject(game,object){
   else if(object.name == 'particle'){
     game.particles.remove(object);
   }
+  else if(object.name == 'coin'){
+    game.coins.remove(object);
+  }
   else{
     //it is a bullet
     game.bullets.remove(object);
@@ -31,6 +34,9 @@ function removeObject(game,object){
 function enemyCollide(player, enemy){
   if(!player.shield){
     this.player.hp -= enemy.damage;
+    if(this.player.hp<0){
+      this.player.hp=0;
+    }
   }
   explode(this,enemy.x,enemy.y);
   removeObject(this,enemy);
@@ -52,6 +58,7 @@ function hitEnemy(bullet, enemy){
   createSparkles(this,bullet.x,bullet.y);
   this.bullets.remove(bullet);
   if(enemy.hp<=0){
+    spawnCoin(this,enemy.x,enemy.y);
     spawnParticles(this,enemy.x,enemy.y);
     this.player.points += enemy.points;
   }
@@ -60,25 +67,41 @@ function hitEnemy(bullet, enemy){
 function getCollectible(player,collectible){
   collectible.disableBody(true,true);
   if(collectible.name == 'healthPoint'){
-    player.hp += 50;
-    if(player.hp>200){
-      player.hp = 200;
+    player.hp += 30;
+    if(player.hp>player.maxHP){
+      player.hp = player.maxHP;
     }
     this.healthPoints.remove(collectible);
   }else if(collectible.name == 'fireRate'){
-    player.fireDelay = 100;
+    //increase fire rate if gun type is not lazer
+    if(player.gunType!='laser'){
+      player.fireDelay = 100;
+    }
     this.fireRates.remove(collectible);
-    this.time.delayedCall(10000, restoreFireRate, [this.player], this);
+    this.time.delayedCall(playerStats.fireRate, restoreFireRate, [this.player], this);
   }else if(collectible.name == 'slowdown'){
     //slowdown all objects except player for 10 seconds
     slowdown = true;
-    this.time.delayedCall(7000, function(){slowdown=false;}, [this.player], this);
+    //slowdown all enemyspawns
+    for(var i=0;i<this.timers.length;i++){
+      if(this.timers[i].name == 'enemyTimer' || this.timers[i].name == 'distanceTimer'){
+        this.timers[i].delay *= 1.7;
+      }
+
+    }
+    //restore all delays
+    this.time.delayedCall(playerStats.slowdown, function(){
+      slowdown=false;
+      for(var i=0;i<this.timers.length;i++){
+        if(this.timers[i].name == 'enemyTimer' || this.timers[i].name == 'distanceTimer')
+          this.timers[i].delay /= 1.7;
+      }
+    }, [this.player], this);
   }else if(collectible.name == 'gunUpgrade'){
     this.gunUpgrades.remove(collectible);
 
     //choose a new gun randomly
-    //var upgrade = Phaser.Math.Between(0, 2);
-    var upgrade = 1;
+    var upgrade = Phaser.Math.Between(0, 2);
     if(upgrade==1){
       player.gunType = 'lazer';
       player.fireDelay = 0;
@@ -88,13 +111,16 @@ function getCollectible(player,collectible){
       player.gunType = 'missile';
     }
     //set gun type to default in 10 seconds
-    this.time.delayedCall(10000, restoreGun, [this.player], this);
+    this.time.delayedCall(playerStats.gunUp, restoreGun, [this.player], this);
+  }else if(collectible.name == 'coin'){
+    player.coins+=1;
+    this.coins.remove(collectible);
   }
   else{
     //it is Shield
     player.shield = true;
     this.shields.remove(collectible);
-    this.time.delayedCall(7000, shieldOff, [this.player], this);
+    this.time.delayedCall(playerStats.shield, shieldOff, [this.player], this);
     player.setTint(0x00ccff);
   }
 }
@@ -115,6 +141,11 @@ function particleCollision(player, particle){
   particle.disableBody(true,true);
   createSparkles(this,particle.x,particle.y);
   particle.disableBody(true,true);
-  player.hp-=5;
+  if(!player.shield){
+    player.hp-=5;
+    if(player.hp<0){
+      player.hp=0;
+    }
+  }
   this.particles.remove(particle);
 }

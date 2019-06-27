@@ -3,11 +3,11 @@ function updatePlayer(thisGame){
     //player moves
      if (cursors.left.isDown)
     {
-        thisGame.player.setVelocityX(-200);
+        thisGame.player.setVelocityX(-200*thisGame.player.velocity);
     }
     else if (cursors.right.isDown)
     {
-        thisGame.player.setVelocityX(200);
+        thisGame.player.setVelocityX(200*thisGame.player.velocity);
     }
     else
     {
@@ -16,13 +16,13 @@ function updatePlayer(thisGame){
 
     if (cursors.up.isDown)
     {
-        thisGame.player.setVelocityY(-300);
+        thisGame.player.setVelocityY(-300*thisGame.player.velocity);
         if(thisGame.player.rotation >= -0.5){
           thisGame.player.rotation -= 0.1;
         }
     }
     else if(cursors.down.isDown){
-       thisGame.player.setVelocityY(300)
+       thisGame.player.setVelocityY(300*thisGame.player.velocity)
        if(thisGame.player.rotation <= 0.5){
          thisGame.player.rotation += 0.1;
        }
@@ -428,8 +428,8 @@ function updateBullets(thisGame, toRemove){
       else if(!slowdown && child.modified){
         //if there was a slowdown and the enemy bullet/missile velocity was modified
         //restore it
-        child.body.velocity.x = child.velX;
-        child.body.velocity.y = child.velY;
+        child.body.velocity.x /= 0.3;
+        child.body.velocity.y /= 0.3;
         child.modified = false;
       }
       else if(child.name != 'playerBullet' && slowdown && !child.modified){
@@ -512,6 +512,20 @@ function updateHealthPoints(thisGame,toRemove){
   });
 }
 
+function updateSlowdowns(thisGame,toRemove){
+  thisGame.clocks.children.iterate(function(child){
+    if(!paused){
+      if(child.x<0){
+        toRemove.push(child);
+      }else{
+        child.setVelocityX(-50);
+      }
+    }else{
+      child.setVelocityX(0);
+    }
+  });
+}
+
 function updateParticles(thisGame,toRemove){
   thisGame.particles.children.iterate(function(child){
     if(!paused){
@@ -529,6 +543,7 @@ function updateParticles(thisGame,toRemove){
         child.body.velocity.y = child.velY;
         child.modified = false;
       }else if(child.paused == true){
+        //if particle was paused and game is unpaused, resotre velocities
         child.body.velocity.x = child.prevVelX;
         child.body.velocity.y = child.prevVelY;
         child.paused = false;
@@ -541,6 +556,20 @@ function updateParticles(thisGame,toRemove){
       }
       child.setVelocityX(0);
       child.setVelocityY(0);
+    }
+  });
+}
+
+function updateCoins(thisGame,toRemove){
+  thisGame.coins.children.iterate(function(child){
+    if(!paused){
+      if(child.x<0){
+        toRemove.push(child);
+      }else{
+        child.setVelocityX(-50);
+      }
+    }else{
+      child.setVelocityX(0);
     }
   });
 }

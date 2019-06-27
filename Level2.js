@@ -3,14 +3,14 @@ class Level2 extends Phaser.Scene{
     super({key:"Level2"})
   }
 
-  create(){
+  create(data){
+    playerStats = data;
     thisGame = this;
     level = 2;
     //add background
     this.tileSprite = this.add.tileSprite(0,0,1200,600,'sky').setOrigin(0);
 
     //  Set the camera bounds to be the size of the image
-    //this.cameras.main.setBounds(0, 0, 1200, 600);
     this.physics.world.setBounds(0, 0, 1200, 600);
 
     //create stats texts
@@ -22,8 +22,8 @@ class Level2 extends Phaser.Scene{
 
     //add game elements
     thisGame.player = this.physics.add.sprite(400,400,'player');
-    thisGame.player.hp = 100;
-    thisGame.player.damage = 10;
+    thisGame.player.hp = playerStats.hp;
+    thisGame.player.damage = playerStats.damage;
     thisGame.player.points = score;
     thisGame.player.lastFired = 0;
     thisGame.player.fireDelay = 200;

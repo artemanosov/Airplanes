@@ -1,14 +1,13 @@
 var thisGame;
 var cursors;
-//game objects
-var player;
-var newPlayer;
+var playerStats;
 //game stats
 var gameOver;
 var distanceText;
 var distance;
 var scoreText;
 var healthText;
+var coinsText;
 var score
 //collectibles
 var healthPoints;
@@ -26,10 +25,18 @@ var timeStarted;
 var paused;
 var pauseText;
 //timers for enemies
+var cornTimer;
 var interTimer;
 var destrTimer;
 var bomber1Timer;
 var bomber2Timer;
+var distanceTimer;
+var gunUpTimer;
+var healthTimer;
+var shieldTimer;
+var slowdownTimer;
+var fireRateTimer;
+
 
 class MenuScene extends Phaser.Scene{
   constructor(){
@@ -38,6 +45,7 @@ class MenuScene extends Phaser.Scene{
   preload(){
     this.load.image('sky', 'assets/bg.png');
     this.load.image('logo', 'assets/logo.png');
+    this.load.image('hangarLogo', 'assets/hangarLogo.png');
     this.load.spritesheet('player', 'assets/player.png', {frameWidth: 58, frameHeight: 70});
     this.load.spritesheet('cornduster', 'assets/cornduster.png', {frameWidth: 52, frameHeight: 60});
     this.load.spritesheet('interceptor', 'assets/interceptor.png', {frameWidth: 38, frameHeight: 70});
@@ -47,6 +55,16 @@ class MenuScene extends Phaser.Scene{
     this.load.spritesheet('lazer', 'assets/laser.png', {frameWidth: 16, frameHeight: 4});
     this.load.spritesheet('boss', 'assets/bossSprite.png', {frameWidth: 120, frameHeight: 232});
     this.load.spritesheet('boss2', 'assets/boss2.png', {frameWidth: 120, frameHeight: 232});
+    this.load.spritesheet('coin', 'assets/coin.png', {frameWidth: 18, frameHeight: 18});
+    this.load.image('shopClock', 'assets/shopClock.png');
+    this.load.image('shopGunUp', 'assets/shopGunUp.png');
+    this.load.image('shopShield', 'assets/shopShield.png');
+    this.load.image('shopHealth', 'assets/shopHealth.png');
+    this.load.image('shopFireRate', 'assets/shopFireRate.png');
+    this.load.image('shopSpeedUp', 'assets/shopSpeedUp.png');
+    this.load.image('shopDamage', 'assets/shopDamage.png');
+    this.load.image('add', 'assets/add.png');
+    this.load.image('subtract', 'assets/subtract.png');
     this.load.image('bomber1', 'assets/bomber1.png');
     this.load.image('bomber2', 'assets/bomber2.png');
     this.load.image('striker', 'assets/striker.png');
@@ -122,6 +140,13 @@ class MenuScene extends Phaser.Scene{
     });
 
     this.anims.create({
+      key: 'coin',
+      frames: this.anims.generateFrameNumbers('coin', { start: 0, end: 3 }),
+      frameRate: 10,
+      repeat: -1,
+    });
+
+    this.anims.create({
       key: 'boss',
       frames: this.anims.generateFrameNumbers('boss', { start: 0, end: 2 }),
       frameRate: 20,
@@ -139,7 +164,8 @@ class MenuScene extends Phaser.Scene{
     score = 0;
     //start game scene when "S" is pressed
     this.input.keyboard.on('keyup_S', function(){
-      this.scene.start("Level1");
+      //pass player's stats to the next scene
+      this.scene.start("Level1",{hp:200,points:0,speed:1,velocity:1,damage:10,coins:0,shield:7000,slowdown:7000,gunUp:10000,fireRate:10000});
       this.scene.stop("MenuScene");
     }, this);
 

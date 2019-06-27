@@ -16,10 +16,7 @@ function fire(game,x, y, angle, velocity, type){
     var bullet2 = game.bullets.create(x,y,type).setOrigin(0);
     var bullet3 = game.bullets.create(x,y,type).setOrigin(0);
     //save bullet original x and y velocities
-    bullet2.velX = bullet2.body.velocity.x;
-    bullet2.velY = bullet2.body.velocity.y;
-    bullet3.velX = bullet3.body.velocity.x;
-    bullet3.velY = bullet3.body.velocity.y;
+
 
     bullet2.name = type;
     bullet2.modified = false;
@@ -66,11 +63,6 @@ function fire(game,x, y, angle, velocity, type){
       bullet.damage = 10;
     }
   }
-
-  //save bullet original x and y velocities
-  //console.log(bullet.body.velocity.x);
-  bullet.velX = bullet.body.velocity.x;
-  bullet.velY = bullet.body.velocity.y;
 
   bullet.name = type;
   bullet.modified = false;
