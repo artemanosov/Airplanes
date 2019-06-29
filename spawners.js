@@ -1,4 +1,4 @@
-function sendCornduster() {
+function sendCornduster(){
   var x = 1200;
   var y = Phaser.Math.Between(35, 400);
   var cornduster = this.corndusters.create(x,y,'cornduster').setOrigin(0);
@@ -11,7 +11,8 @@ function sendCornduster() {
   cornduster.ang = 180;
 }
 
-function sendInterceptor() {
+function sendInterceptor(){
+  debugger
   var x = 1200;
   var y = Phaser.Math.Between(0, 530);
   var interceptor = this.interceptors.create(x,y,'interceptor').setOrigin(0);

@@ -72,37 +72,45 @@ function updateBoss1(thisGame){
       //check if boss is on the upper edge of the battlefield
       if(thisGame.boss.body.y<=0){
         thisGame.boss.direction = 'down';
-        thisGame.boss.setVelocityY(50);
+        thisGame.boss.setVelocityY(100);
       }
       //restore velocity if boss was paused
       if(thisGame.boss.paused == true){
         thisGame.boss.paused = false;
-        thisGame.boss.setVelocityY(-50);
-        thisGame.boss.setVelocityX(-50);
+        thisGame.boss.setVelocityY(-100);
+        thisGame.boss.setVelocityX(-100);
       }
     }else{
       //boss going down
       //check if boss is on the lower edge of the battlefield
       if(thisGame.boss.body.y>=366){
         thisGame.boss.direction = 'up';
-        thisGame.boss.setVelocityY(-50);
+        thisGame.boss.setVelocityY(-100);
       }
       //restore velocity if boss was paused
       if(thisGame.boss.paused == true){
         thisGame.boss.paused = false;
-        thisGame.boss.setVelocityY(50);
-        thisGame.boss.setVelocityX(-50);
+        thisGame.boss.setVelocityY(100);
+        thisGame.boss.setVelocityX(-100);
       }
+    }
+
+    if(slowdown && thisGame.boss.modified == false){
+      thisGame.boss.fireDelay *= 2;
+      thisGame.boss.modified = true;
+    }else if(!slowdown && thisGame.boss.modified == true){
+      thisGame.boss.fireDelay /= 2;
+      thisGame.boss.modified = false;
     }
 
     //ATTACK
     if((thisGame.time.now - thisGame.boss.lastFired)>thisGame.boss.fireDelay){
       //boss have different attack patterns depending on his health
-      if(thisGame.boss.hp<200){
+      if(thisGame.boss.hp<3000){
         fire(thisGame,thisGame.boss.x-50, thisGame.boss.y-70, 180 , 450, 'missile1');
         fire(thisGame,thisGame.boss.x-50, thisGame.boss.y+70, 180 , 450, 'missile1');
       }
-      else if(thisGame.boss.hp>5000){
+      else if(thisGame.boss.hp<7000){
         if(thisGame.boss.fireAngle > 200){
           thisGame.boss.fireDirection = 'down';
         }else if(thisGame.boss.fireAngle < 160){
@@ -114,8 +122,14 @@ function updateBoss1(thisGame){
         }else{
           thisGame.boss.fireAngle+=1;
         }
-        fire(thisGame,thisGame.boss.x-50, thisGame.boss.y-70, thisGame.boss.fireAngle , 450, 'enemyBullet');
-        fire(thisGame,thisGame.boss.x-50, thisGame.boss.y+70, -thisGame.boss.fireAngle , 450, 'enemyBullet');
+        if(thisGame.boss.hp<4000){
+          fire(thisGame,thisGame.boss.x-50, thisGame.boss.y-70, thisGame.boss.fireAngle , 450, 'missile1');
+          fire(thisGame,thisGame.boss.x-50, thisGame.boss.y+70, -thisGame.boss.fireAngle , 450, 'missile1');
+        }else{
+          fire(thisGame,thisGame.boss.x-50, thisGame.boss.y-70, thisGame.boss.fireAngle , 450, 'enemyBullet');
+          fire(thisGame,thisGame.boss.x-50, thisGame.boss.y+70, -thisGame.boss.fireAngle , 450, 'enemyBullet');
+        }
+
       }else{
         fire(thisGame,thisGame.boss.x-50, thisGame.boss.y-70, 180 , 450, 'enemyBullet');
         fire(thisGame,thisGame.boss.x-50, thisGame.boss.y+70, 180 , 450, 'enemyBullet');
@@ -159,6 +173,14 @@ function updateBoss2(thisGame){
       thisGame.boss.setVelocityY(velocity);
     }
 
+    if(slowdown && thisGame.boss.modified == false){
+      thisGame.boss.fireDelay *= 2;
+      thisGame.boss.modified = true;
+    }else if(!slowdown && thisGame.boss.modified == true){
+      thisGame.boss.fireDelay /= 2;
+      thisGame.boss.modified = false;
+    }
+
     //ATTACK
     if((thisGame.time.now - thisGame.boss.lastFired)>thisGame.boss.fireDelay){
       //boss have different attack patterns depending on his health
@@ -194,7 +216,7 @@ function updateBoss2(thisGame){
   }
 }
 
-  function updateCorndusters(thisGame, toRemove){
+function updateCorndusters(thisGame, toRemove){
     thisGame.corndusters.children.iterate(function(child){
       if(!paused){
         if(child.x < -20 || child.hp<=0){

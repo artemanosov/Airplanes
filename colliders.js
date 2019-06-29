@@ -1,3 +1,14 @@
+//collectibles indecators
+var fireUpOn;
+var shieldOn;
+var gunUpOn;
+var slowdown;
+var shieldCountdown;
+var fireUpCountdown;
+var gunUpCountdown;
+var slowdownCountdown;
+
+
 function removeObject(game,object){
   object.disableBody(true,true);
   //remove enemy from the group
@@ -32,7 +43,7 @@ function removeObject(game,object){
 }
 
 function enemyCollide(player, enemy){
-  if(!player.shield){
+  if(!shieldOn){
     this.player.hp -= enemy.damage;
     if(this.player.hp<0){
       this.player.hp=0;
@@ -44,7 +55,7 @@ function enemyCollide(player, enemy){
 
 function hitPlayer(player, bullet){
   //apply damage if shield is off
-  if(!player.shield){
+  if(!shieldOn){
     player.hp -= bullet.damage;
   }
   createSparkles(this,bullet.x,bullet.y);
@@ -64,6 +75,7 @@ function hitEnemy(bullet, enemy){
   }
 }
 
+
 function getCollectible(player,collectible){
   collectible.disableBody(true,true);
   if(collectible.name == 'healthPoint'){
@@ -74,11 +86,23 @@ function getCollectible(player,collectible){
     this.healthPoints.remove(collectible);
   }else if(collectible.name == 'fireRate'){
     //increase fire rate if gun type is not lazer
-    if(player.gunType!='laser'){
+    fireUpOn = true;
+    fireUpCountdown = playerStats.fireRate/1000;
+    //add timer to event
+    var timer = this.time.addEvent({ delay: 1000, callback: function(){
+      if(fireUpCountdown==0){
+        restoreFireRate(this.player);
+        timer.remove(false);
+      }else{
+        fireUpCountdown-=1;
+      }
+    }, callbackScope: this, loop: true });
+
+    if(player.gunType!='lazer'){
       player.fireDelay = 100;
     }
     this.fireRates.remove(collectible);
-    this.time.delayedCall(playerStats.fireRate, restoreFireRate, [this.player], this);
+    powerupSound.play();
   }else if(collectible.name == 'slowdown'){
     //slowdown all objects except player for 10 seconds
     slowdown = true;
@@ -87,19 +111,23 @@ function getCollectible(player,collectible){
       if(this.timers[i].name == 'enemyTimer' || this.timers[i].name == 'distanceTimer'){
         this.timers[i].delay *= 1.7;
       }
-
     }
+    slowdownCountdown = playerStats.slowdown/1000;
+
     //restore all delays
-    this.time.delayedCall(playerStats.slowdown, function(){
-      slowdown=false;
-      for(var i=0;i<this.timers.length;i++){
-        if(this.timers[i].name == 'enemyTimer' || this.timers[i].name == 'distanceTimer')
-          this.timers[i].delay /= 1.7;
+    //add timer to event
+    var timer = this.time.addEvent({ delay: 1000, callback: function(){
+      if(slowdownCountdown==0){
+        restoreDelays(this);
+        timer.remove(false);
+      }else{
+        slowdownCountdown-=1;
       }
-    }, [this.player], this);
+    }, callbackScope: this, loop: true });
+    powerupSound.play();
   }else if(collectible.name == 'gunUpgrade'){
     this.gunUpgrades.remove(collectible);
-
+    gunUpOn = true;
     //choose a new gun randomly
     var upgrade = Phaser.Math.Between(0, 2);
     if(upgrade==1){
@@ -109,30 +137,56 @@ function getCollectible(player,collectible){
       player.gunType = 'triple';
     }else{
       player.gunType = 'missile';
+      player.fireDelay *= 2;
     }
-    //set gun type to default in 10 seconds
-    this.time.delayedCall(playerStats.gunUp, restoreGun, [this.player], this);
+    gunUpCountdown = playerStats.gunUp/1000;
+    //add timer to event
+    var timer = this.time.addEvent({ delay: 1000, callback: function(){
+      if(gunUpCountdown==0){
+        restoreGun(this.player);
+        timer.remove(false);
+      }else{
+        gunUpCountdown-=1;
+      }
+    }, callbackScope: this, loop: true });
+    powerupSound.play();
   }else if(collectible.name == 'coin'){
     player.coins+=1;
     this.coins.remove(collectible);
+    coinSound.play();
   }
   else{
     //it is Shield
-    player.shield = true;
+    shieldOn = true;
     this.shields.remove(collectible);
-    this.time.delayedCall(playerStats.shield, shieldOff, [this.player], this);
+    shieldCountdown = playerStats.shield/1000;
+    //add timer to event
+    var timer = this.time.addEvent({ delay: 1000, callback: function(){
+      if(shieldCountdown==0){
+        shieldOff(this.player);
+        timer.remove(false);
+      }else{
+        shieldCountdown-=1;
+      }
+    }, callbackScope: this, loop: true });
     player.setTint(0x00ccff);
+    powerupSound.play();
   }
 }
 
-function restoreFireRate(player){player.fireDelay = 200;}
+function restoreFireRate(player){
+  if(player.gunType!='lazer')
+    player.fireDelay = 200;
+  fireUpOn = false;
+}
 
 function shieldOff(player){
-  player.shield = false;
+  shieldOn = false;
   player.clearTint();
 }
 
 function restoreGun(player){
+  gunUpOn = false;
   player.gunType = 'regular';
   player.fireDelay = 200;
 }
@@ -141,11 +195,19 @@ function particleCollision(player, particle){
   particle.disableBody(true,true);
   createSparkles(this,particle.x,particle.y);
   particle.disableBody(true,true);
-  if(!player.shield){
+  if(!shieldOn){
     player.hp-=5;
     if(player.hp<0){
       player.hp=0;
     }
   }
   this.particles.remove(particle);
+}
+
+function restoreDelays(thisGame){
+  slowdown=false;
+  for(var i=0;i<thisGame.timers.length;i++){
+    if(thisGame.timers[i].name == 'enemyTimer' || thisGame.timers[i].name == 'distanceTimer')
+      thisGame.timers[i].delay /= 1.7;
+  }
 }

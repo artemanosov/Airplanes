@@ -2,6 +2,7 @@ function explode(game,x,y){
   var explosion = game.explosions.get(x,y).setActive(true);
   explosion.setOrigin(0);
   explosion.play('explode');
+  explodeSound.play();
   explosion.on('animationcomplete', function(){explosion.destroy();});
 }
 

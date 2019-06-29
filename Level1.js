@@ -15,32 +15,33 @@ class Level1 extends Phaser.Scene{
     this.physics.world.setBounds(0, 0, 1200, 600);
 
     //create stats texts
-    distanceText = this.add.text(1000,5,'distance: 0',{fontSize: '20px', fill: '#000' });
-    scoreText = this.add.text(5,5,'score: 0',{fontSize: '20px', fill: '#000' });
-    healthText = this.add.text(550,5,'HP: 0',{fontSize: '20px', fill: '#000' });
-    levelText = this.add.text(5,580,'Level: 1',{fontSize: '20px', fill: '#000' });
-    pauseText = this.add.text(400,300,'PAUSED',{fontSize: '50px', fill: '#000' });
-    coinsText = this.add.text(550,580,'Coins:',{fontSize: '20px', fill: '#000' });
+    addStatsTexts(thisGame);
+
 
     //add game elements
     thisGame.player = this.physics.add.sprite(400,400,'player');
-    thisGame.player.hp = 100;
+    thisGame.player.hp = -1;
     thisGame.player.maxHP = playerStats.hp;
     thisGame.player.damage = 10;
     thisGame.player.points = 0;
     thisGame.player.lastFired = 0;
     thisGame.player.fireDelay = 200;
-    thisGame.player.shield = false;
     thisGame.player.coins = 0;
     thisGame.player.velocity = playerStats.velocity;
     thisGame.player.setCollideWorldBounds(true);
     thisGame.player.setMaxVelocity(300);
     thisGame.player.anims.play('player', true);
 
+    shieldOn = false;
+    gunUpOn = false;
+    fireUpOn = false;
+    slowdown = false;
+
 
 
     //CREATE BULLETS
     this.bullets = this.physics.add.group();
+
     //CREATE ENEMIES:
     //1. Corn Duster
     //2. Interceptor
@@ -89,7 +90,6 @@ class Level1 extends Phaser.Scene{
     //Create Time Slowdown
     this.clocks = this.physics.add.group();
     this.physics.add.overlap(thisGame.player, this.clocks, getCollectible, null, this);
-    slowdown = false;
 
     //Create particles
     this.particles = this.physics.add.group();
@@ -120,66 +120,61 @@ class Level1 extends Phaser.Scene{
     this.timers = new Array();
 
     //set spawns of collectibles
-    healthTimer = this.time.addEvent({ delay: 45000, callback: createHP, callbackScope: this, loop: true });
-    shieldTimer = this.time.addEvent({ delay: 65000, callback: createShield, callbackScope: this, loop: true });
-    gunUpTimer = this.time.addEvent({ delay: 550000, callback: createGunUpgrade, callbackScope: this, loop: true });
-    fireRateTimer = this.time.addEvent({ delay: 40000, callback: createFireRate, callbackScope: this, loop: true });
-    slowdownTimer = this.time.addEvent({delay: 75000, callback: createClock, callbackScope: this, loop: true });
+    this.healthTimer = this.time.addEvent({ delay: 45000, callback: createHP, callbackScope: this, loop: true });
+    this.shieldTimer = this.time.addEvent({ delay: 65000, callback: createShield, callbackScope: this, loop: true });
+    this.gunUpTimer = this.time.addEvent({ delay: 55000, callback: createGunUpgrade, callbackScope: this, loop: true });
+    this.fireRateTimer = this.time.addEvent({ delay: 40000, callback: createFireRate, callbackScope: this, loop: true });
+    this.slowdownTimer = this.time.addEvent({delay: 75000, callback: createClock, callbackScope: this, loop: true });
 
-    this.timers.push(healthTimer);
-    this.timers.push(shieldTimer);
-    this.timers.push(gunUpTimer);
-    this.timers.push(fireRateTimer);
-    this.timers.push(slowdownTimer);
+    this.timers.push(this.healthTimer);
+    this.timers.push(this.shieldTimer);
+    this.timers.push(this.gunUpTimer);
+    this.timers.push(this.fireRateTimer);
+    this.timers.push(this.slowdownTimer);
+
+    this.healthTimer.active = true;
+    this.shieldTimer.active = true;
+    this.gunUpTimer.active = true;
+    this.fireRateTimer.active = true;
+    this.slowdownTimer.active = true;
 
     //set spawns for enemies
 
     //distance 200-180 spwan only corndusters every 3 seconds
     this.cornTimer1 = this.time.addEvent({ delay: 3000, callback: sendCornduster, callbackScope: this, loop: true });
     this.cornTimer1.name = 'enemyTimer';
+    this.cornTimer1.active = true;
     this.timers.push(this.cornTimer1);
 
-    //distance 180-150 spawn corndusters every 3 seconds and interceptors every 5 seconds
-    this.levelTimer1 = this.time.delayedCall(20000,function(){
-      this.interTimer1 = this.time.addEvent({ delay: 5000, callback: sendInterceptor, callbackScope: this, loop: true });
-      this.interTimer1.name = 'enemyTimer';
-      this.timers.push(this.interTimer1);
-      this.timers.pop(this.levelTimer1);
-    },[],this);
-    this.levelTimer1.name = 'enemyTimer';
-    this.timers.push(this.levelTimer1);
+    //distance 180-150 spawn corndusters every 5 seconds and interceptors every 5 seconds
+    this.interTimer1 = this.time.addEvent({ delay: 5000, callback: sendInterceptor, callbackScope: this, loop: true,paused:true});
+    this.interTimer1.name = 'enemyTimer';
+    this.interTimer1.active = false;
+    this.timers.push(this.interTimer1);
 
 
     //distance 150-0 spwan corndusters every 6 secons, interceptors every 7 secons and groups of four bombers every 30 seconds
-    this.levelTimer2 = this.time.delayedCall(50000,function(){
-      //remove old timers
-      this.timers.pop(this.interTimer1);
-      this.interTimer1.remove(false);
-      this.timers.pop(this.cornTimer1);
-      this.cornTimer1.remove(false);
 
       //add new timers
-      this.cornTimer2 = this.time.addEvent({ delay: 6000, callback: sendCornduster, callbackScope: this, loop: true });
-      this.cornTimer2.name = 'enemyTimer';
-      this.timers.push(this.cornTimer2);
-      this.interTimer2 = this.time.addEvent({ delay: 7000, callback: sendInterceptor, callbackScope: this, loop: true });
-      this.interTimer2.name = 'enemyTimer';
-      this.timers.push(this.interTimer2);
+    this.cornTimer2 = this.time.addEvent({ delay: 6000, callback: sendCornduster, callbackScope: this, loop: true,paused:true });
+    this.cornTimer2.name = 'enemyTimer';
+    this.cornTimer2.active = false;
+    this.timers.push(this.cornTimer2);
+    this.interTimer2 = this.time.addEvent({ delay: 7000, callback: sendInterceptor, callbackScope: this, loop: true,paused:true });
+    this.interTimer2.name = 'enemyTimer';
+    this.interTimer2.active = false;
+    this.timers.push(this.interTimer2);
 
 
-      this.bomber1Timer = this.time.addEvent({ delay: 30000, callback: function(){
+    this.bomber1Timer = this.time.addEvent({ delay: 50000, callback: function(){
         sendBomber1(thisGame);
         this.time.delayedCall(3000, sendBomber1,[thisGame], this);
         this.time.delayedCall(6000, sendBomber1,[thisGame], this);
         this.time.delayedCall(9000, sendBomber1, [thisGame], this);
       }, callbackScope: this, loop: true });
-      this.bomber1Timer.name = 'enemyTimer';
-      this.timers.push(this.bomber1Timer);
-
-      this.timers.pop(this.levelTimer2);
-    },[],this)
-    this.levelTimer2.name = 'enemyTimer';
-    this.timers.push(this.levelTimer2);
+    this.bomber1Timer.name = 'enemyTimer';
+    this.bomber1Timer.active = false;
+    this.timers.push(this.bomber1Timer);
 
 
 
@@ -189,8 +184,30 @@ class Level1 extends Phaser.Scene{
     this.distanceTimer = this.time.addEvent({delay: 1000, callback: function(){
       if(!paused)
         distance-=1
+
+      if (distance == 180){
+        this.interTimer1.active = true;
+        this.interTimer1.paused = false;
+
+      }else if(distance == 150){
+        this.interTimer2.active = true;
+        this.interTimer2.paused = false;
+
+        this.interTimer1.active = false;
+        this.interTimer1.paused = true;
+
+        this.cornTimer2.active = true;
+        this.cornTimer2.paused = false;
+
+        this.cornTimer1.active = false;
+        this.cornTimer1.paused = true;
+
+        this.bomber1Timer.active = true;
+        this.bomber1Timer.paused = false;
+      }
     }, callbackScope: this, loop: true });
     this.timers.push(this.distanceTimer);
+    this.distanceTimer.active = true;
     this.distanceTimer.name = 'distanceTimer';
 
 
@@ -199,14 +216,14 @@ class Level1 extends Phaser.Scene{
     this.input.keyboard.on('keyup_P', function(){
       paused = !paused;
       if(paused){
-        //if game is paused, puase all timers
-        for(var i=0;i<this.timers.length;i++){
-          this.timers[i].paused = true;
+        for(var k=0;k<this.timers.length;k++){
+          if(this.timers[k].active)
+            this.timers[k].paused = true;
         }
       }else{
-        //if game is upaused, restore all timers
         for(var k=0;k<this.timers.length;k++){
-          this.timers[k].paused = false;
+          if(this.timers[k].active)
+            this.timers[k].paused = false;
         }
       }
     }, this);
@@ -241,10 +258,10 @@ class Level1 extends Phaser.Scene{
       }
 
       if(paused){
-        pauseText.visible = true;
+        showPauseText();
       }else{
         //if game is not paused
-        pauseText.visible = false;
+        hidePauseText();
         //background moves
         if(slowdown){
           this.tileSprite.tilePositionX += 0.225;
@@ -252,10 +269,7 @@ class Level1 extends Phaser.Scene{
         else{
           this.tileSprite.tilePositionX += 0.75;
         }
-        distanceText.text = 'distance: '+distance;
-        scoreText.text = 'score: '+thisGame.player.points;
-        healthText.text = 'HP: '+thisGame.player.hp;
-        coinsText.text = 'Coins: '+thisGame.player.coins;
+        updateStatsTexts(thisGame, distance);
       }
 
     }else{
@@ -263,11 +277,20 @@ class Level1 extends Phaser.Scene{
       if(!gameOver){
         this.time.removeAllEvents();
         thisGame.player.disableBody(true,true);
-        this.add.text(400,300,'GAME OVER',{fontSize: '50px', fill: '#000' });
+        var gameOverText = this.add.text(400,300,'GAME OVER',{fontSize: '50px', fill: '#000' });
         //start game scene when "S" is pressed
-        this.time.delayedCall(10000, function(){
-          this.scene.start("MenuScene");
-          this.scene.stop("Level1");
+
+        this.time.delayedCall(4000, function(){
+          gameOverText.visible = false;
+          playerStats.points = thisGame.player.points;
+          showForm();
+          this.add.text(400,500,'PRESS "S" TO RETRUN TO MAIN MENU',{fontSize: '25px', fill: '#000' });
+          this.input.keyboard.on('keyup_S', function(){
+            document.getElementById('leaderboard').style.display = "none";
+            document.getElementById('leaderboard').innerHTML = '';
+            this.scene.start("MenuScene");
+            this.scene.stop("Level1");
+          }, this);
         },[], this);
         gameOver = true;
         score = thisGame.player.points;
@@ -281,10 +304,11 @@ class Level1 extends Phaser.Scene{
         speed:playerStats.speed,
         damage:playerStats.damage,
         coins:thisGame.player.coins,
-        shield:playerStats.shild,
+        shield:playerStats.shield,
         slowdown:playerStats.slowdown,
         gunUp:playerStats.gunUp,
         fireRate:playerStats.fireRate,
+        velocity:playerStats.velocity,
         nextLevel: 'Level2'});
       this.scene.stop("Level1");
     }

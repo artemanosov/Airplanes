@@ -3,39 +3,14 @@ var cursors;
 var playerStats;
 //game stats
 var gameOver;
-var distanceText;
-var distance;
-var scoreText;
-var healthText;
-var coinsText;
-var score
-//collectibles
-var healthPoints;
-var shields;
-var gunUpgrades;
-var clocks;
-var slowdown;
-//effects
-var explosions;
-var sparkles;
 //Level
 var level;
-var levelText;
-var timeStarted;
-var paused;
-var pauseText;
-//timers for enemies
-var cornTimer;
-var interTimer;
-var destrTimer;
-var bomber1Timer;
-var bomber2Timer;
-var distanceTimer;
-var gunUpTimer;
-var healthTimer;
-var shieldTimer;
-var slowdownTimer;
-var fireRateTimer;
+//sounds
+var theme;
+var attackSound;
+var explodeSound;
+var coinSound;
+var powerupSound;
 
 
 class MenuScene extends Phaser.Scene{
@@ -78,6 +53,12 @@ class MenuScene extends Phaser.Scene{
     this.load.image('gunUpgrade', 'assets/gunUpgrade.png');
     this.load.image('clock', 'assets/clock.png');
     this.load.image('particle', 'assets/particle.png');
+    //load audio
+    this.load.audio('theme', 'assets/audio/theme.wav');
+    this.load.audio('attack', 'assets/audio/attack.ogg');
+    this.load.audio('explodeS', 'assets/audio/explosionS.ogg');
+    this.load.audio('coinS', 'assets/audio/coinS.ogg');
+    this.load.audio('powerupS', 'assets/audio/powerupS.ogg');
   }
   create(){
     level = 0;
@@ -160,12 +141,23 @@ class MenuScene extends Phaser.Scene{
       repeat: -1,
     });
 
+    //CREATE SOUND EFFECTS
+    attackSound = this.sound.add('attack');
+    explodeSound = this.sound.add('explodeS');
+    coinSound = this.sound.add('coinS');
+    powerupSound = this.sound.add('powerupS');
+    theme = this.sound.add('theme');
+    theme.play();
+    theme.setLoop(true);
+
+
     gameOver = false;
     score = 0;
     //start game scene when "S" is pressed
     this.input.keyboard.on('keyup_S', function(){
       //pass player's stats to the next scene
-      this.scene.start("Level1",{hp:200,points:0,speed:1,velocity:1,damage:10,coins:0,shield:7000,slowdown:7000,gunUp:10000,fireRate:10000});
+      theme.setMute(true);
+      this.scene.start("Level1",{hp:200,points:0,speed:1,velocity:1,damage:10,coins:0,shield:7000,slowdown:7000,gunUp:10000,fireRate:10000,nextLevel:'Level2'});
       this.scene.stop("MenuScene");
     }, this);
 

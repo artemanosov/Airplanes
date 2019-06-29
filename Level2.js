@@ -14,20 +14,21 @@ class Level2 extends Phaser.Scene{
     this.physics.world.setBounds(0, 0, 1200, 600);
 
     //create stats texts
-    distanceText = this.add.text(1000,5,'distance: 0',{fontSize: '20px', fill: '#000' });
-    scoreText = this.add.text(5,5,'score: 0',{fontSize: '20px', fill: '#000' });
-    healthText = this.add.text(550,5,'HP: 0',{fontSize: '20px', fill: '#000' });
-    levelText = this.add.text(5,580,'Level: 2',{fontSize: '20px', fill: '#000' });
+    addStatsTexts(thisGame)
+
 
 
     //add game elements
     thisGame.player = this.physics.add.sprite(400,400,'player');
     thisGame.player.hp = playerStats.hp;
+    thisGame.player.maxHP = playerStats.hp;
     thisGame.player.damage = playerStats.damage;
-    thisGame.player.points = score;
+    thisGame.player.points = playerStats.points;
     thisGame.player.lastFired = 0;
     thisGame.player.fireDelay = 200;
     thisGame.player.shield = false;
+    thisGame.player.coins = 0;
+    thisGame.player.velocity = playerStats.velocity;
     thisGame.player.setCollideWorldBounds(true);
     thisGame.player.setMaxVelocity(300);
     thisGame.player.anims.play('player', true);
@@ -36,6 +37,7 @@ class Level2 extends Phaser.Scene{
 
     //CREATE BULLETS
     this.bullets = this.physics.add.group();
+
     //CREATE ENEMIES:
     //1. Corn Duster
     //2. Interceptor
@@ -68,6 +70,10 @@ class Level2 extends Phaser.Scene{
     //1. First Aid Kit
     //2. Shield
     //3. Gun upgrade
+    //4. Fire Rates
+    //5. Time Slowdown
+    //6. Coins
+
 
     //Create First Aid Kit
     this.healthPoints = this.physics.add.group();
@@ -80,6 +86,23 @@ class Level2 extends Phaser.Scene{
     //Create Gun Upgrade
     this.gunUpgrades = this.physics.add.group();
     this.physics.add.overlap(thisGame.player, this.gunUpgrades, getCollectible, null, this);
+
+    //Create Fire Rate Upgrade
+    this.fireRates = this.physics.add.group();
+    this.physics.add.overlap(thisGame.player, this.fireRates, getCollectible, null, this);
+
+    //Create Time Slowdown
+    this.clocks = this.physics.add.group();
+    this.physics.add.overlap(thisGame.player, this.clocks, getCollectible, null, this);
+    slowdown = false;
+
+    //Create particles
+    this.particles = this.physics.add.group();
+    this.physics.add.overlap(thisGame.player, this.particles, particleCollision, null, this);
+
+    //Create coins
+    this.coins = this.physics.add.group();
+    this.physics.add.overlap(thisGame.player, this.coins, getCollectible, null, this);
 
     //CREATE EFFECTS
     //create Explosions
@@ -94,267 +117,240 @@ class Level2 extends Phaser.Scene{
       maxSize: 40
     });
 
+    //add cursor keys
+    cursors = this.input.keyboard.createCursorKeys();
+
     //CONSTRUCT THE LEVEL (spawn enemies at certain times)
+    this.timers = new Array();
+
+    //set spawns of collectibles
+    this.healthTimer = this.time.addEvent({ delay: 45000, callback: createHP, callbackScope: this, loop: true });
+    this.shieldTimer = this.time.addEvent({ delay: 65000, callback: createShield, callbackScope: this, loop: true });
+    this.gunUpTimer = this.time.addEvent({ delay: 55000, callback: createGunUpgrade, callbackScope: this, loop: true });
+    this.fireRateTimer = this.time.addEvent({ delay: 40000, callback: createFireRate, callbackScope: this, loop: true });
+    this.slowdownTimer = this.time.addEvent({delay: 75000, callback: createClock, callbackScope: this, loop: true });
+
+    this.timers.push(this.healthTimer);
+    this.timers.push(this.shieldTimer);
+    this.timers.push(this.gunUpTimer);
+    this.timers.push(this.fireRateTimer);
+    this.timers.push(this.slowdownTimer);
+
+    this.healthTimer.active = true;
+    this.shieldTimer.active = true;
+    this.gunUpTimer.active = true;
+    this.fireRateTimer.active = true;
+    this.slowdownTimer.active = true;
+
+
+    console.log(this.timers);
     //set spawns of enemies
-    //distance==200
-    this.time.addEvent({ delay: 3000, callback: sendCornduster, callbackScope: this, loop: true });
+    //distance==300
+    this.cornTimer1 = this.time.addEvent({ delay: 3000, callback: sendCornduster, callbackScope: this, loop: true });
+    this.cornTimer1.name = 'enemyTimer';
+    this.cornTimer1.active = true;
+    this.timers.push(this.cornTimer1);
 
-    //distance == 195
-    this.time.delayedCall(5000,function(){
-      interTimer = this.time.addEvent({ delay: 2000, callback: sendInterceptor, callbackScope: this, loop: true });
-    },[],this);
+    //distance == 295
+    this.interTimer1 = this.time.addEvent({ delay: 5000, callback: sendInterceptor, callbackScope: this, loop: true,paused:true});
+    this.interTimer1.name = 'enemyTimer';
+    this.interTimer1.active = false;
+    this.timers.push(this.interTimer1);
 
-    //distance == 185
-    this.time.delayedCall(15000,function(){
-      destrTimer = this.time.addEvent({ delay: 2000, callback: sendDestroyer, callbackScope: this, loop: true });
-      bomber1Timer = this.time.addEvent({ delay: 30000, callback: function(){
+
+    //distance == 250 add destroyer and bomber 1
+    this.destrTimer1 = this.time.addEvent({ delay: 10000, callback: sendDestroyer, callbackScope: this, loop: true,paused:true });
+    this.destrTimer1.name = 'enemyTimer';
+    this.destrTimer1.active = false;
+    this.timers.push(this.destrTimer1);
+
+    this.bomber1Timer = this.time.addEvent({ delay: 50000, callback: function(){
         sendBomber1(thisGame);
         this.time.delayedCall(3000, sendBomber1,[thisGame], this);
         this.time.delayedCall(6000, sendBomber1,[thisGame], this);
         this.time.delayedCall(9000, sendBomber1, [thisGame], this);
       }, callbackScope: this, loop: true });
-    },[],this)
-
-    //distance == 155
-    this.time.delayedCall(45000,function(){
-      destrTimer.remove(false);
-      destrTimer = this.time.addEvent({ delay: 1000, callback: sendDestroyer, callbackScope: this, loop: true });
-    },[],this)
+    this.bomber1Timer.name = 'enemyTimer';
+    this.bomber1Timer.active = false;
+    this.timers.push(this.bomber1Timer);
 
 
-    //distance == 130
-    this.time.delayedCall(70000,function(){
-      destrTimer.remove(false);
-      interTimer.remove(false)
-      destrTimer = this.time.addEvent({ delay: 3000, callback: sendDestroyer, callbackScope: this, loop: true });
-      interTimer = this.time.addEvent({ delay: 2000, callback: sendInterceptor, callbackScope: this, loop: true });
-      bomber1Timer.remove(false);
-      this.time.addEvent({ delay: 30000, callback: function(){
+    //distance == 150 update destroyers delay, remove corndusters
+    this.destrTimer2 = this.time.addEvent({ delay: 5000, callback: sendDestroyer, callbackScope: this, loop: true,paused:true });
+    this.destrTimer2.name = 'enemyTimer';
+    this.destrTimer2.active = false;
+    this.timers.push(this.destrTimer2);
+
+
+    //distance == 130, update destroyer and interceptor  delays, change bomber 1 to bomber 2
+    this.destrTimer3 = this.time.addEvent({ delay: 4000, callback: sendDestroyer, callbackScope: this, loop: true,paused:true });
+    this.destrTimer3.name = 'enemyTimer';
+    this.destrTimer3.active = false;
+    this.timers.push(this.destrTimer3);
+
+    this.interTimer2 = this.time.addEvent({ delay: 5000, callback: sendInterceptor, callbackScope: this, loop: true,paused:true });
+    this.interTimer2.name = 'enemyTimer';
+    this.interTimer2.active = false;
+    this.timers.push(this.interTimer2);
+
+    this.bomber2Timer = this.time.addEvent({ delay: 30000, callback: function(){
         sendBomber2(thisGame);
         this.time.delayedCall(3000, sendBomber2,[thisGame], this);
         this.time.delayedCall(6000, sendBomber2,[thisGame], this);
         this.time.delayedCall(9000, sendBomber2, [thisGame], this);
-      }, callbackScope: this, loop: true });
-    },[],this);
+    }, callbackScope: this, loop: true,paused:true });
+    this.bomber2Timer.name = 'enemyTimer';
+    this.bomber2Timer.active = false;
+    this.timers.push(this.bomber2Timer);
+    console.log(this.timers);
+    //create distance timer
+    distance = 300;
+    this.distanceTimer = this.time.addEvent({delay: 1000, callback: function(){
+      if(!paused)
+        distance-=1
 
+     //unpause and pause timers for enemy spawns depending on the distance
+     if(distance == 295){
+       this.interTimer1.active = true;
+       this.interTimer1.paused = false;
+     }else if(distance == 250){
+       this.destrTimer1.active = true;
+       this.destrTimer1.paused = false;
 
+       this.bomber1Timer.active = true;
+       this.bomber1Timer.paused = false;
+     }else if (distance == 150){
+       this.destrTimer2.active = true;
+       this.destrTimer2.paused = false;
 
-    //set spawns of collectibles
-    this.time.addEvent({ delay: 35000, callback: createHP, callbackScope: this, loop: true });
-    this.time.addEvent({ delay: 25000, callback: createShield, callbackScope: this, loop: true });
-    this.time.addEvent({ delay: 30000, callback: createGunUpgrade, callbackScope: this, loop: true });
+       this.destrTimer1.active = false;
+       this.destrTimer1.paused = true;
+     }else if(distance == 130){
+       this.destrTimer3.active = true;
+       this.destrTimer3.paused = false;
 
-    //add cursor keys
-    cursors = this.input.keyboard.createCursorKeys();
+       this.destrTimer2.active = false;
+       this.destrTimer2.paused = true;
 
-    //level data
-    distance = 200;
-    this.time.addEvent({delay: 1000, callback: function(){distance-=1}, callbackScope: this, loop: true });
+       this.interTimer2.active = true;
+       this.interTimer2.paused = false;
+
+       this.interTimer1.active = false;
+       this.interTimer1.paused = true;
+
+       this.bomber2Timer.active = true;
+       this.bomber2Timer.paused = false;
+
+       this.bomber1Timer.active = false;
+       this.bomber1Timer.paused = true;
+     }
+
+    }, callbackScope: this, loop: true });
+    this.distanceTimer.active = true;
+    this.distanceTimer.name = 'distanceTimer';
+    this.timers.push(this.distanceTimer);
+
+    //create pause
+    paused = false;
+    this.input.keyboard.on('keyup_P', function(){
+      paused = !paused;
+      if(paused){
+        for(var k=0;k<this.timers.length;k++){
+          if(this.timers[k].active)
+            this.timers[k].paused = true;
+        }
+      }else{
+        for(var k=0;k<this.timers.length;k++){
+          if(this.timers[k].active)
+            this.timers[k].paused = false;
+        }
+      }
+    }, this);
+
   }
 
   update(){
     if(thisGame.player.hp>0){
       //player moves
-
-       if (cursors.left.isDown)
-      {
-          thisGame.player.setVelocityX(-200);
-      }
-      else if (cursors.right.isDown)
-      {
-          thisGame.player.setVelocityX(200);
-      }
-      else
-      {
-          thisGame.player.setVelocityX(0);
-
-      }
-
-      if (cursors.up.isDown)
-      {
-          thisGame.player.setVelocityY(-300);
-          if(thisGame.player.rotation >= -0.5){
-            thisGame.player.rotation -= 0.1;
-          }
-      }
-      else if(cursors.down.isDown){
-         thisGame.player.setVelocityY(300)
-         if(thisGame.player.rotation <= 0.5){
-           thisGame.player.rotation += 0.1;
-         }
-      }
-      else{
-         thisGame.player.setVelocityY(0);
-         if(thisGame.player.rotation > 0){
-           thisGame.player.rotation -= 0.1;
-           if(thisGame.player.rotation < 0){
-             thisGame.player.rotation = 0;
-           }
-         }else if(thisGame.player.rotation < 0){
-           thisGame.player.rotation +=0.1;
-           if(thisGame.player.rotation > 0){
-             thisGame.player.rotation = 0;
-           }
-         }
-      }
-
-
-      //make player fire bullets
-      if((this.time.now-thisGame.player.lastFired)>thisGame.player.fireDelay){
-        //debugger
-        fire(this,thisGame.player.x+30, thisGame.player.y, thisGame.player.angle, 600, 'playerBullet');
-        thisGame.player.lastFired = this.time.now;
-      }
-
+      updatePlayer(thisGame);
       //create an array of enemies that are outside the world and must be removed
       var toRemove = new Array();
-
       //check if enemy of each type has negative x (enemy left the battlefield)
-      //also, fire if needed
-      this.corndusters.children.iterate(function(child){
-        if(child.x < -20 || child.hp<=0){
-          toRemove.push(child);
-        }else{
-          var angle = child.ang;
-          if(child.direction == 'down'){
-            if(angle <= 134){
-              child.direction = 'up';
-            }
-            angle -= 1;
+      //also, fire if needed and play death animation if hp<=0
+      updateCorndusters(thisGame,toRemove);
+      updateInterceptors(thisGame,toRemove);
+      updateDestroyers(thisGame,toRemove);
+      updateBombers1(thisGame,toRemove);
+      updateBombers2(thisGame,toRemove);
+      updateBullets(thisGame,toRemove);
 
-            thisGame.physics.velocityFromAngle(angle, 200, child.body.velocity);
-          }else{
-            if(angle >= 224){
-              child.direction = 'down';
-            }
-            angle += 1;
-            thisGame.physics.velocityFromAngle(angle, 200, child.body.velocity);
-          }
-          child.ang = angle;
-
-
-        }
-        if(child.hp<=0){
-          //play death animation
-          explode(thisGame,child.x,child.y);
-        }
-
-      });
-
-      this.interceptors.children.iterate(function(child){
-        if(child.x < -20 || child.hp<=0){
-          toRemove.push(child);
-        }else if((thisGame.time.now - child.lastFired)>2000){
-          fire(thisGame,child.x, child.y+30, 180, 450, 'enemyBullet');
-          child.lastFired = thisGame.time.now;
-        }
-        if(child.hp<=0){
-          //play death animation
-          explode(thisGame,child.x,child.y);
-        }
-      });
-
-      this.destroyers.children.iterate(function(child){
-        if(child.x < -20 || child.hp<=0){
-          toRemove.push(child);
-        }else if((thisGame.time.now - child.lastFired)>1000){
-          fire(thisGame,child.x, child.y+30, 180, 450, 'enemyBullet');
-          child.lastFired = thisGame.time.now;
-        }
-        if(child.hp<=0){
-          //play death animation
-          explode(thisGame,child.x,child.y);
-        }
-      });
-
-      this.bombers1.children.iterate(function(child){
-        if(child.y < -20 || child.hp<=0){
-          toRemove.push(child);
-        }else if((thisGame.time.now - child.lastFired)>1000){
-          fire(thisGame,child.x, child.y+30, 180, 450, 'missile1');
-          child.lastFired = thisGame.time.now;
-        }
-        if(child.hp<=0){
-          //play death animation
-          explode(thisGame,child.x,child.y);
-        }
-      });
-
-      this.bombers2.children.iterate(function(child){
-        if(child.y < -20 || child.hp<=0){
-          toRemove.push(child);
-        }else if((thisGame.time.now - child.lastFired)>2000){
-          var angle = Phaser.Math.Angle.Between(child.x,child.y+30,thisGame.player.x,thisGame.player.y);
-          fire(thisGame,child.x, child.y+30, angle , 450, 'missile2');
-          child.lastFired = thisGame.time.now;
-        }
-        if(child.hp<=0){
-          //play death animation
-          explode(thisGame,child.x,child.y);
-        }
-      });
-
-      this.bullets.children.iterate(function(child){
-        if(child.x<0 || child.x>1200 || child.y<0 || child.y>600){
-          toRemove.push(child);
-        }
-      });
-
-      this.gunUpgrades.children.iterate(function(child){
-        if(child.x<0){
-          toRemove.push(child);
-        }
-      });
-
-      this.healthPoints.children.iterate(function(child){
-        if(child.x<0){
-          toRemove.push(child);
-        }
-      });
-
-      this.shields.children.iterate(function(child){
-        if(child.x<0){
-          toRemove.push(child);
-        }
-      });
+      //update collectibles
+      updateGunUpgrades(thisGame,toRemove);
+      updateHealthPoints(thisGame,toRemove);
+      updateShields(thisGame,toRemove);
+      updateParticles(thisGame,toRemove);
+      updateFireRates(thisGame,toRemove);
+      updateCoins(thisGame,toRemove);
+      updateSlowdowns(thisGame,toRemove);
 
       while(toRemove.length>0){
         var e = toRemove.pop();
         removeObject(this,e);
       }
 
-      //background moves
-      this.tileSprite.tilePositionX += 0.75;
-      distanceText.text = 'distance: '+distance;
-      scoreText.text = 'score: '+thisGame.player.points;
-      healthText.text = 'HP: '+thisGame.player.hp;
+      if(paused){
+        pauseText.visible = true;
+      }else{
+        //if game is not paused
+        pauseText.visible = false;
+        //background moves
+        if(slowdown){
+          this.tileSprite.tilePositionX += 0.225;
+        }
+        else{
+          this.tileSprite.tilePositionX += 0.75;
+        }
+        updateStatsTexts(thisGame, distance);
+      }
 
     }else{
+      //when game ends
       if(!gameOver){
         this.time.removeAllEvents();
         thisGame.player.disableBody(true,true);
-        this.add.text(400,300,'GAME OVER',{fontSize: '50px', fill: '#000' });
+        var gameOverText = this.add.text(400,300,'GAME OVER',{fontSize: '50px', fill: '#000' });
         //start game scene when "S" is pressed
-        this.time.delayedCall(10000, function(){
-          level = 0;
-          this.scene.start("MenuScene");
-          this.scene.stop("Level2");
+        this.time.delayedCall(4000, function(){
+          gameOverText.visible = false;
+          playerStats.points = thisGame.player.points;
+          showForm();
+          this.add.text(400,500,'PRESS "S" TO RETRUN TO MAIN MENU',{fontSize: '25px', fill: '#000' });
+          this.input.keyboard.on('keyup_S', function(){
+            document.getElementById('leaderboard').style.display = "none";
+            document.getElementById('leaderboard').innerHTML = '';
+            this.scene.start("MenuScene");
+            this.scene.stop("Level2");
+          }, this);
         },[], this);
         gameOver = true;
+        score = thisGame.player.points;
       }
     }
 
-    if(distance==0 && !gameOver){
-      this.add.text(400,300,'GAME COMPLETED',{fontSize: '50px', fill: '#000' });
-      var yourScore = this.add.text(500,400,'',{fontSize: '20px', fill: '#000' });
-      yourScore.text = 'YOUR SCORE IS '+thisGame.player.points;
-      this.time.delayedCall(10000, function(){
-        level = 0;
-        this.scene.start("MenuScene");
-        this.scene.stop("Level2");
-      },[], this);
-      gameOver = true;
-      score = thisGame.player.points;
+    if(distance==0){
+      this.scene.start("Hangar",{
+        hp:playerStats.hp,
+        points:thisGame.player.points+playerStats.points,
+        speed:playerStats.speed,
+        damage:playerStats.damage,
+        coins:thisGame.player.coins+playerStats.coins,
+        shield:playerStats.shield,
+        slowdown:playerStats.slowdown,
+        gunUp:playerStats.gunUp,
+        fireRate:playerStats.fireRate,
+        velocity:playerStats.velocity,
+        nextLevel: 'Level3'});
+      this.scene.stop("Level2");
     }
   }
 }

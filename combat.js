@@ -15,8 +15,6 @@ function fire(game,x, y, angle, velocity, type){
     var bullet = game.bullets.create(x,y,type).setOrigin(0);
     var bullet2 = game.bullets.create(x,y,type).setOrigin(0);
     var bullet3 = game.bullets.create(x,y,type).setOrigin(0);
-    //save bullet original x and y velocities
-
 
     bullet2.name = type;
     bullet2.modified = false;
@@ -34,21 +32,29 @@ function fire(game,x, y, angle, velocity, type){
     game.physics.velocityFromAngle(angle+20, velocity, bullet3.body.velocity);
 
     //add collisions for each bullet with enemies depending on the level
-    game.physics.add.overlap(game.corndusters, bullet2, hitEnemy, null, game);
-    game.physics.add.overlap(game.corndusters, bullet3, hitEnemy, null, game);
-    if(level == 1 || level == 2){
+
+    if(level == 1 || level == 2  || level == 3 || level ==4){
       game.physics.add.overlap(game.interceptors, bullet2, hitEnemy, null, game);
       game.physics.add.overlap(game.interceptors, bullet3, hitEnemy, null, game);
+    }
+
+    if(level == 1 || level == 2  || level == 3){
+      game.physics.add.overlap(game.corndusters, bullet2, hitEnemy, null, game);
+      game.physics.add.overlap(game.corndusters, bullet3, hitEnemy, null, game);
       game.physics.add.overlap(game.bombers1, bullet2, hitEnemy, null, game);
       game.physics.add.overlap(game.bombers1, bullet3, hitEnemy, null, game);
     }
-    if(level == 2 || level == 3){
+    if(level == 2 || level == 4 || level == 5){
       game.physics.add.overlap(game.destroyers, bullet2, hitEnemy, null, game);
       game.physics.add.overlap(game.destroyers, bullet3, hitEnemy, null, game);
       game.physics.add.overlap(game.bombers2, bullet2, hitEnemy, null, game);
       game.physics.add.overlap(game.bombers2, bullet3, hitEnemy, null, game);
     }
-    if(level == 3){
+    if(level == 3 || level ==5){
+      game.physics.add.overlap(bullet2, game.boss, hitEnemy, null, game);
+      game.physics.add.overlap(bullet3, game.boss, hitEnemy, null, game);
+    }
+    if(level == 4 || level == 5){
       game.physics.add.overlap(game.strikers, bullet2, hitEnemy, null, game);
       game.physics.add.overlap(game.strikers, bullet3, hitEnemy, null, game);
     }
@@ -82,23 +88,25 @@ function fire(game,x, y, angle, velocity, type){
   if(type=='playerBullet'){
     //it is a player bullet.
     //depending on the level collisions are different due to different enemies on different levels
-
-    if(level == 1 || level == 2){
-      game.physics.add.overlap(game.corndusters, bullet, hitEnemy, null, game);
+    if(level == 1 || level == 2  || level == 3 || level ==4){
       game.physics.add.overlap(game.interceptors, bullet, hitEnemy, null, game);
+    }
+
+    if(level == 1 || level == 2  || level == 3){
+      game.physics.add.overlap(game.corndusters, bullet, hitEnemy, null, game);
       game.physics.add.overlap(game.bombers1, bullet, hitEnemy, null, game);
     }
-    if(level == 2 || level == 3){
+    if(level == 2 || level == 4 || level == 5){
       game.physics.add.overlap(game.destroyers, bullet, hitEnemy, null, game);
       game.physics.add.overlap(game.bombers2, bullet, hitEnemy, null, game);
     }
-    if(level == 3){
+    if(level == 3 || level ==5){
+      game.physics.add.overlap(bullet, game.boss, hitEnemy, null, game);
+    }
+    if(level == 4 || level == 5){
       game.physics.add.overlap(game.strikers, bullet, hitEnemy, null, game);
-      game.physics.add.overlap(game.corndusters, bullet, hitEnemy, null, game);
     }
-    if(level==4){
-      game.physics.add.overlap( bullet, game.boss, hitEnemy, null, game);
-    }
+    attackSound.play();
   }
   else{
     //it is enemy bullet and must have collision detection with player

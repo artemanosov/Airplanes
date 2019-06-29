@@ -5,7 +5,6 @@ class Hangar extends Phaser.Scene{
   create(data){
     //add background
     playerStats = data;
-    playerStats.coins +=20;
     this.tileSprite = this.add.tileSprite(0,0,1200,600,'sky').setOrigin(0);
     //create logo
     this.add.image(600,50,'hangarLogo');
@@ -77,7 +76,7 @@ class Hangar extends Phaser.Scene{
       //increase health points
       if(playerStats.coins>=20){
         playerStats.coins-=20;
-        playerStats.health+=10;
+        playerStats.hp+=10;
         this.total1 += 1;
       }
     },this);
@@ -87,7 +86,7 @@ class Hangar extends Phaser.Scene{
       //decrease health points
       if(this.total1>0){
         playerStats.coins+=20;
-        playerStats.health-=10;
+        playerStats.hp-=10;
         this.total1 -= 1;
       }
     },this);
@@ -137,7 +136,7 @@ class Hangar extends Phaser.Scene{
       //increase speed
       if(playerStats.coins>=20){
         playerStats.coins-=20;
-        playerStats.speed+=0.02;
+        playerStats.speed+=0.1;
         this.total4 += 1;
       }
     },this);
@@ -147,7 +146,7 @@ class Hangar extends Phaser.Scene{
       //decrease speed
       if(this.total4>0){
         playerStats.coins+=20;
-        playerStats.speed-=0.02;
+        playerStats.speed-=0.1;
         this.total4 -= 1;
       }
     },this);
@@ -223,10 +222,11 @@ class Hangar extends Phaser.Scene{
         speed:playerStats.speed,
         damage:playerStats.damage,
         coins:playerStats.coins,
-        shield:playerStats.shild,
+        shield:playerStats.shield,
         slowdown:playerStats.slowdown,
         gunUp:playerStats.gunUp,
         fireRate:playerStats.fireRate,
+        velocity:playerStats.velocity,
       });
       this.scene.stop('Hangar');
     }, this);
